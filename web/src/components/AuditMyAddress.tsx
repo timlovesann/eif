@@ -108,10 +108,8 @@ export const AuditMyAddress: React.FC = () => {
   ); 
     
   useEffect(() => {
-    let unmounted = false;
     setIsCountyDropdownLoading(true);
-    fetch('https://data.electionintegrityforce.com/api/counties')
-    //fetch('http://localhost:8081/api/counties-202205')
+    fetch(process.env.REACT_API_BASE_URL + '/api/counties')
       .then((res) => res.json())
       .then((counties) => {
       setCounties(counties);
@@ -138,8 +136,7 @@ export const AuditMyAddress: React.FC = () => {
     setResponseMessage("");
     let addressLine1 = ((streetNumber === null? "" : streetNumber.trim()) + (streetName === null? "" : streetName.trim())).replace(' ', '');
     const addressFirst8AndZip = (addressLine1.slice(0, 8) + (zip === null? "" : zip.trim())).toUpperCase();
-    //const resp = await axios.get(`http://localhost:8081/api/audit-your-address-202205/${countyName}/${addressFirst8AndZip}`);
-    const resp = await axios.get(`https://data.electionintegrityforce.com/api/audit-your-address/${countyName}/${addressFirst8AndZip}`);
+    const resp = await axios.get(process.env.REACT_API_BASE_URL + `/api/audit-your-address/${countyName}/${addressFirst8AndZip}`);
     if(resp.status === 200) {
       setResponseMessage("Success");
       setCount(resp.data.count);

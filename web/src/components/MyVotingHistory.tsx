@@ -76,7 +76,7 @@ const MyVotingHistory: React.FC = () => {
     setCurrentUser(currentUser);
     setUserReady(true);    
     let unmounted = false;
-    fetch('https://data.electionintegrityforce.com/api/qvfdates')
+    fetch(process.env.REACT_API_BASE_URL + '/api/qvfdates')
       .then((res) => res.json())
       .then((qvfDates) => {
         setQvfDates(qvfDates);
@@ -94,10 +94,8 @@ const MyVotingHistory: React.FC = () => {
     // Preventing the page from reloading
     event.preventDefault();
     setIsLoading(true);
-    //const urlBase = `http://localhost:8081/api/votinghistory/${qvfDate}`;
-    const urlBase = `https://data.electionintegrityforce.com/api/votinghistory/${qvfDate}`;
+    const urlBase = process.env.REACT_API_BASE_URL + `/api/votinghistory/${qvfDate}`;
     let urlSuffix = '';
-    //const resp = await axios.get(`http://localhost:8081/api/votinghistory/${qvfDate}/${voterId}/${voterLastName}/${voterFirstName}`);
     if(voterId) {
       urlSuffix = `/voterid:${voterId}`;
     } else {

@@ -159,7 +159,7 @@ export const ChallengeList: React.FC = () => {
     setIsCountyDropdownLoading(true);    
     void async function fetchCounties() {
       try {
-        const url = 'https://data.electionintegrityforce.com/api/counties';
+        const url = process.env.REACT_API_BASE_URL + '/api/counties';
         const response = await fetch(url, { signal: abortController.signal });
         setCounties(await response.json());
         setIsCountyDropdownLoading(false);
@@ -185,8 +185,7 @@ export const ChallengeList: React.FC = () => {
 
   function fetchJurisdictions(countyName: string) {
     setIsJurisdictionDropdownLoading(true);
-    fetch(`https://data.electionintegrityforce.com/api/jurisdictions/${countyName}`)
-    //fetch(`http://localhost:8081/api/jurisdictions/${countyName}`)
+    fetch(process.env.REACT_API_BASE_URL + `/api/jurisdictions/${countyName}`)
       .then((res) => res.json())
       .then((jurisdictions) => {
         setJurisdictions(jurisdictions);
@@ -208,8 +207,7 @@ export const ChallengeList: React.FC = () => {
 
   function fetchPrecincts(jurisdictionName: string) {
     setIsPrecinctDropdownLoading(true);
-    fetch(`https://data.electionintegrityforce.com/api/precincts/${countyName}/${jurisdictionName}`)
-    //fetch(`http://localhost:8081/api/precincts/${countyName}/${jurisdictionName}`)
+    fetch(process.env.REACT_API_BASE_URL + `/api/precincts/${countyName}/${jurisdictionName}`)
       .then((res) => res.json())
       .then((precincts) => {
         setPrecincts(precincts);
@@ -241,9 +239,8 @@ export const ChallengeList: React.FC = () => {
     // Preventing the page from reloading
     event.preventDefault();    
     setIsLoading(true);
-    setResponseMessage("");
-    //const resp = await axios.get(`http://localhost:8081/api/challenge-list/${countyName}/${jurisdictionName}/${precinctName}`, { headers: authHeader() });
-    const resp = await axios.get(`https://data.electionintegrityforce.com/api/challenge-list/${countyName}/${jurisdictionName}/${precinctName}`, { headers: authHeader() });
+    setResponseMessage("");  
+    const resp = await axios.get(process.env.REACT_API_BASE_URL + `/api/challenge-list/${countyName}/${jurisdictionName}/${precinctName}`, { headers: authHeader() });
     if(resp.status === 200) {
       setResponseMessage("Success");
       setChallengeableVoters(resp.data);

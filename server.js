@@ -8,7 +8,7 @@ const path = __dirname + '/app/views/';
 app.use(express.static(path));
 // For local development server to call hosted api
 var corsOptions = {
-  origin: "http://localhost:3000"
+  origin: "http://localhost:8080"
 };
   
 app.use(cors(corsOptions));

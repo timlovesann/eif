@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://data.electionintegrityforce.com/api/auth/";
+const API_URL = process.env.REACT_API_BASE_URL + "/api/auth/";
 
 class AuthService {
   login(username, password) {

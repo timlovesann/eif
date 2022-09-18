@@ -96,8 +96,7 @@ export const Ghostbusters: React.FC = () => {
     setIsCountyDropdownLoading(true);    
     void async function fetchCounties() {
       try {
-        const url = 'https://data.electionintegrityforce.com/api/counties';
-        //const url = 'http://localhost:8081/api/counties';
+        const url = process.env.REACT_API_BASE_URL + '/api/counties';
         const response = await fetch(url, { signal: abortController.signal });
         setCounties(await response.json());
         setIsCountyDropdownLoading(false);
@@ -133,8 +132,7 @@ export const Ghostbusters: React.FC = () => {
     event.preventDefault();    
     setIsLoading(true);
     setResponseMessage("");
-    //const resp = await axios.get(`http://localhost:8081/api/flagged-registrations/${countyName}`);
-    const resp = await axios.get(`https://data.electionintegrityforce.com/api/ghostbuster-locations/${countyName}`, { headers: authHeader() });
+    const resp = await axios.get(process.env.REACT_API_BASE_URL + `/api/ghostbuster-locations/${countyName}`, { headers: authHeader() });
     if(resp.status === 200) {
       setResponseMessage("Success");
       setLocations(resp.data);
