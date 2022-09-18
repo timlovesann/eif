@@ -1,0 +1,1 @@
+/opt/nvm/versions/node/v18.4.0/bin/pm2 start /var/www/data.electionintegrityforce.com/server.js -o /var/www/data.electionintegrityforce.com/logs/out.log -e /var/www/data.electionintegrityforce.com/logs/err.log

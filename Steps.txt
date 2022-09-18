@@ -1,0 +1,12 @@
+mkdir eif
+cd eif
+# Create npm project 
+npm init -y
+git init
+# Create .gitignore file
+
+mkdir app/views
+mkdir app/controllers
+mkdir app/middleware
+mkdir app/models
+mkdir app/routes
