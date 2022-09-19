@@ -8,7 +8,7 @@ import { Redirect } from "react-router-dom";
 import authHeader from "../services/auth-header";
 
 export interface RegisteredVoter {
-  error_code: string;
+  challenge_codes: string;
   full_street_address: string;
   full_name: string;
   voter_identification_number: string;
@@ -55,8 +55,8 @@ export const ChallengeList: React.FC = () => {
 
   const columns: TableColumn<RegisteredVoter>[] = useMemo(() => [
       {
-        name: 'Error Code',
-        selector: (row: { type: string; }) => getErrors(row),
+        name: 'Challenge Code(s)',
+        selector: (row: { challenge_codes: any; }) => row.challenge_codes,
         sortable: true,
         width: '300px',
       },
@@ -128,25 +128,6 @@ export const ChallengeList: React.FC = () => {
     ], []
   );  
   
-  function getErrors(row) {
-    var errors = "";
-    if(row.type === 'Business' || row.type === 'Hotel' || row.type === 'Cemetary' || row.type === 'Empty Lot') {
-      errors = "ADDRESS_ILLEGAL ";
-    }
-    if( (row.type === 'Apartment' || row.type === 'Trailer Park' || row.type === 'RV Park-Seasonal') && (row.extension === null || row.extension === '')) {
-      errors = errors + "ADDRESS_EXTENSION ";
-    }
-    if(row.year_of_birth < 1912) {
-      errors = errors + "AGE_OVER ";
-    } 
-    if(row.year_of_birth > 2004) {
-      errors = errors + "AGE_UNDER ";
-    }
-    if( (row.first_name === row.last_name) || (row.last_name === row.middle_name) ) {
-      errors = errors + "NAME_DUPLICATE ";
-    }
-    return errors;
-  }
   useEffect(() => {
     const currentUser = AuthService.getCurrentUser();
     if (!currentUser) {
@@ -255,42 +236,6 @@ export const ChallengeList: React.FC = () => {
     setIsLoading(false);
   }
 
-  const conditionalRowStyles = [
-    {
-      when: columns => ( (columns.extension === null || columns.extension === '') && (columns.type === 'RV Park-Seasonal' || columns.type === 'Apartment' || columns.type === 'Trailer Park') ),
-      style: {
-        color: 'red',
-        '&:hover': {
-          cursor: 'pointer',
-        },
-      },
-    },
-    {
-      when: columns => (columns.type === 'Business' || columns.type === 'Hotel' || columns.type === 'Cemetary' || columns.type === 'Empty Lot'),
-      style: {
-        color: 'red',
-        '&:hover': {
-          cursor: 'pointer',
-        },
-      },
-    },
-    {
-      when: columns => (columns.year_of_birth < 1912 || columns.year_of_birth > 2004),      
-      style: {
-        color: 'red',
-        '&:hover': {
-          cursor: 'pointer',
-        },
-      },
-    }        
-    /* You can also pass a callback to style for additional customization
-    {
-      when: row => row.email.includes('.com'),
-      style: row => ({
-        backgroundColor: row.phone.startsWith('9') || row.phone.startsWith('1') ? 'pink' : 'inerit',
-      }),
-    },*/
-  ];
   if(redirect) {
     return <Redirect to={redirect} />
   } else {
@@ -393,8 +338,7 @@ export const ChallengeList: React.FC = () => {
                                 expandableRowsComponent={ExpandedComponent()} 
                                 expandOnRowClicked columns={columns} 
                                 data={challengeableVoters} 
-                                highlightOnHover 
-                                conditionalRowStyles={conditionalRowStyles} 
+                                highlightOnHover                                 
                                 pagination 
                                 paginationPerPage={10} 
                                 paginationTotalRows={challengeableVoters.length}

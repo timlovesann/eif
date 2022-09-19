@@ -52,18 +52,33 @@ const getChallengeListByPrecinct = (request, response) => {
     const county = request.params.county_name;
     const jurisdiction = request.params.jurisdiction_name;
     const precinct = request.params.precinct_name;
-    const query = "WITH Nov20 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = \'11/03/2020\' ) " +
+    const query = "WITH history AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = \'11/03/2020\' ) " +
                 "select " +
-                "concat(qvf.street_number_prefix, ' '," + 
-                "    qvf.street_number, ' '," +
-                "    qvf.street_number_suffix, ' ', " + 
-                "    qvf.direction_prefix, ' ', " + 
-                "    qvf.street_name, ' ', " +
-                "    qvf.street_type, ' ', " + 
-                "    qvf.city, ' ', " +
-                "    qvf.state, ' ', " + 
-                "    qvf.zip_code) as full_street_address, " +  
-                "concat(qvf.last_name, ' ', CASE qvf.middle_name WHEN NULL THEN '' ELSE qvf.middle_name END, ' ', qvf.first_name) as full_name, " +
+                "concat_ws(' ', " +
+                "    nullif(CASE upper(g.type) WHEN 'APARTMENT' THEN (CASE qvf.extension WHEN '' THEN '001_EXT_BLNK_APRT' ELSE null END) ELSE null END, ''), " +
+                "    nullif(CASE upper(g.type) WHEN 'SENIOR LIVING' THEN (CASE qvf.extension WHEN '' THEN '001_EXT_BLNK_SRLV' ELSE null END) ELSE null END, ''), " +
+                "    nullif(CASE upper(g.type) WHEN 'HOTEL' THEN (CASE qvf.extension WHEN '' THEN '001_EXT_BLNK_HOTL' ELSE null END) ELSE null END, ''), " +
+                "    nullif(CASE upper(g.type) WHEN 'TRAILER PARK' THEN (CASE qvf.extension WHEN '' THEN '001_EXT_BLNK_TRLR' ELSE null END) ELSE null END, ''), " +
+                "    nullif(CASE upper(g.type) WHEN 'EMPTY LOT' THEN '004_EMPTY_LOT' ELSE null END, ''), " +
+                "    nullif(CASE upper(g.type) WHEN 'UPS' THEN '003_BSN_UPS_USPS' ELSE null END, ''), " +
+                "    nullif(CASE upper(g.type) WHEN 'USPS' THEN '003_BSN_UPS_USPS' ELSE null END, '') " +
+                " ) as challenge_codes, " +
+                "concat_ws(' ', " + 
+                "   nullif(qvf.street_number_prefix, ''), " + 
+                "   nullif(qvf.street_number, ''), " +
+                "   nullif(qvf.street_number_suffix, ''), " + 
+                "   nullif(qvf.direction_prefix, ''), " + 
+                "   nullif(qvf.street_name, ''), " +
+                "   nullif(qvf.street_type, ''), " + 
+                "   qvf.city, " +
+                "   qvf.state, " + 
+                "   qvf.zip_code " + 
+                " ) as full_street_address, " +  
+                "concat_ws(' ', " + 
+                "   nullif(qvf.last_name, ''), " +
+                "   nullif(qvf.middle_name, ''), " +
+                "   nullif(qvf.first_name, '') " +
+                " ) as full_name, " +
                 "qvf.voter_identification_number, " +
                 "qvf.year_of_birth, " +
                 "qvf.jurisdiction_name, " +
@@ -87,7 +102,7 @@ const getChallengeListByPrecinct = (request, response) => {
                 "CASE qvfh.is_absentee_voter WHEN 'N' THEN 'In Person' ELSE (CASE  qvfh.is_absentee_voter WHEN 'Y' THEN 'Absentee' ELSE '' END) END as absentee_or_in_person " +
                 "from qvf_20220901_v qvf " +
                 "join ghostbuster g on g.location_hash = qvf.location_hash " +
-                "left join Nov20 qvfh on qvf.voter_identification_number = qvfh.voter_identification_number " +
+                "left join history qvfh on qvf.voter_identification_number = qvfh.voter_identification_number " +
                 "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and qvf.precinct = $3 and g.type != 'APT_LOT?'";
     //console.log(query);
     pool.query(query, [county, jurisdiction, precinct], (error, results) => {
