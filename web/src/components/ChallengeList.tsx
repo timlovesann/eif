@@ -6,6 +6,9 @@ import {CSVLink, CSVDownload} from 'react-csv';
 import AuthService from "../services/auth.service";
 import { Redirect } from "react-router-dom";
 import authHeader from "../services/auth-header";
+import CountyInformation from "./CountyInformation";
+import { CountySummary } from "../types/county.type";
+import { CountyMetadata } from "../types/countymetadata.type";
 
 export interface RegisteredVoter {
   challenge_codes: string;
@@ -50,7 +53,8 @@ export const ChallengeList: React.FC = () => {
   const [responseMessage, setResponseMessage] = useState("");  
   
   const [challengeableVoters, setChallengeableVoters] = useState([]);
-  
+  const [countySummaryInfo, setCountySummaryInfo] = useState<CountySummary>();
+  const [countyMetadataInfo, setCountyMetadataInfo] = useState<CountyMetadata>(); 
   const [hideDownloadButton, setHideDownloadButton] = useState(true);
 
   const columns: TableColumn<RegisteredVoter>[] = useMemo(() => [
@@ -156,8 +160,11 @@ export const ChallengeList: React.FC = () => {
   
   function validateCountySelection(countySelected): void {
     setPrecinctName(" --- Select Precinct --- ");
+    setResponseMessage('');
+    setCountySummaryInfo(null);
+    setCountyMetadataInfo(null);
     if(countySelected == "0"){
-      setReadyForSearch(false);    
+      setReadyForSearch(false);
     } else {
       setCountyName(countySelected);
       fetchJurisdictions(countySelected);
@@ -221,19 +228,24 @@ export const ChallengeList: React.FC = () => {
     event.preventDefault();    
     setIsLoading(true);
     setResponseMessage("");  
-    const resp = await axios.get(process.env.REACT_API_BASE_URL + `/api/challenge-list/${countyName}/${jurisdictionName}/${precinctName}`, { headers: authHeader() });
-    if(resp.status === 200) {
+    let endpoints = [
+      process.env.REACT_API_BASE_URL + `/api/county-summary/${countyName}`,
+      process.env.REACT_API_BASE_URL + `/api/county-metadata/${countyName}`,
+      process.env.REACT_API_BASE_URL + `/api/challenge-list/${countyName}/${jurisdictionName}/${precinctName}`
+    ];
+    Promise.all( endpoints.map( (endpoint) => axios.get(endpoint, { headers: authHeader() }) ) ).then(([{data: countySummaryInfo}, {data: countyMetadataInfo}, {data: challengeableVoters}]) => {
+      countySummaryInfo.county_name = countyName;
+      setCountySummaryInfo(countySummaryInfo);
+      setCountyMetadataInfo(countyMetadataInfo[0]);
+      setChallengeableVoters(challengeableVoters);
       setResponseMessage("Success");
-      setChallengeableVoters(resp.data);
-      if(resp.data.length === 0) {
+      setIsLoading(false);
+      if(challengeableVoters.length === 0) {
         setHideDownloadButton(true);
       } else {
         setHideDownloadButton(false);
-      }
-    } else {      
-      setResponseMessage("Error");
-    }
-    setIsLoading(false);
+      }      
+    });
   }
 
   if(redirect) {
@@ -326,9 +338,13 @@ export const ChallengeList: React.FC = () => {
               : ""
           }
           {
+            
+          }
+          {
             !isLoading ?  
               (responseMessage === 'Success') ? 
                   <>
+                    <CountyInformation countySummary={countySummaryInfo} countyMetadata={countyMetadataInfo}/>                 
                     <p>
                       <CSVLink hidden={hideDownloadButton} data={challengeableVoters} filename={countyName + '-' + jurisdictionName + '-' + precinctName + '-challenge-list.csv'}>
                         <Button className="button" color="red" size={'lg'}>Download results</Button>
