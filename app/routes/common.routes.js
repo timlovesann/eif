@@ -3,6 +3,8 @@ module.exports = app => {
 
   app.get('/api/qvfdates', db.getQvfDates);
   app.get('/api/counties', db.getCounties); 
+  app.get('/api/county-metadata/:county_name', db.getCountyMetadata); 
+  app.get('/api/county-summary/:county_name', db.getCountySummary); 
   app.get('/api/jurisdictions/:county_name/', db.getJurisdictions);  
   app.get('/api/precincts/:county_name/:jurisdiction_name', db.getPrecincts);  
 

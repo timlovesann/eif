@@ -18,8 +18,8 @@ var HtmlWebpackPluginConfig = new HtmlWebpackPlugin({
   });
   
 module.exports = {
-  mode: "development",
-  devtool: 'inline-source-map',
+  mode: "production",
+  //devtool: 'inline-source-map',
   entry: __dirname + '/src/index.tsx',
   output: {    
     filename: '[name].[contenthash].js',
@@ -81,6 +81,11 @@ module.exports = {
       }   
     ]
   },
+  performance: {
+    hints: false,
+    maxEntrypointSize: 512000,
+    maxAssetSize: 512000
+  },  
   plugins: 
     [
       new HtmlWebpackPlugin({

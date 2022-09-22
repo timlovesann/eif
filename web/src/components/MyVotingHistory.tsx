@@ -6,51 +6,58 @@ import VoterSummary from './VoterSummary';
 import { VoterType } from '../types/voter.type';
 import { count } from 'console';
 import DataTable, { TableColumn } from 'react-data-table-component';
-import { Col, Form, FormGroup, Row, Spinner } from 'react-bootstrap';
+import { Card, Col, Form, FormGroup, Row, Spinner } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Redirect } from 'react-router-dom';
 import AuthService from "../services/auth.service";
 import authHeader from '../services/auth-header';
 
 export interface Voter {
-    voter_identification_number: string;
-    county_name: string;
-    jurisdiction_name: string;
-    election_date: string;
-    is_absentee_voter: boolean;
+  voter_identification_number: string;
+  registration_date: string;
+  county_name: string;
+  voter_full_name: string;
+  full_address: string;
+  year_of_birth: number;
+}
+
+export interface VoterHistory {
+  county_name: string;
+  jurisdiction_name: string;
+  election_date: string;
+  is_absentee_voter: boolean;
 }
 
 const MyVotingHistory: React.FC = () => {
   const [redirect, setRedirect] = useState(null);
+  const [summaryCallComplete, setSummaryCallComplete] = useState(false);
+  const [historyCallComplete, setHistoryCallComplete] = useState(false);
   const [userReady, setUserReady] = useState(false);
   const [currentUser, setCurrentUser] = useState({username: ""});
 
   const [qvfDates, setQvfDates] = useState([]);
   const [qvfDate, setQvfDate] = useState(" --- Select QVF Date --- ");
 
+  const [isCountyDropdownLoading, setIsCountyDropdownLoading] = useState(true);
   const [counties, setCounties] = useState([]);
   const [countyName, setCountyName] = useState(" --- Select County --- ");
+  const [readyforSearch, setReadyForSearch] = useState(false);  
 
-  const [voterId, setVoterId] = useState("");
   const [voterLastName, setVoterLastName] = useState("");
   const [voterFirstName, setVoterFirstName] = useState("");
+  const [voterYearOfBirth, setVoterYearOfBirth] = useState("");
   const [voterZip, setVoterZip] = useState("");
-  const [voterCounty, setVoterCounty] = useState("");  
   const [isLoading, setIsLoading] = useState(true);
-  const [voterInfo, setVoterInfo] = useState<VoterType>();
+  const [voterSummary, setVoterSummary] = useState<Voter>();
+  const [voterHistory, setVoterHistory] = useState([]);
   const [responseMessage, setResponseMessage] = useState("");  
-  const columns: TableColumn<Voter>[] = useMemo(
+  const columns: TableColumn<VoterHistory>[] = useMemo(
     () => [
-      {
-        name: 'Voter Identification Number',
-        selector: (row: { voter_identification_number: any; }) => row.voter_identification_number,
-        sortable: true
-      },
       {
         name: 'County Name',
         selector: (row: { county_name: any; }) => row.county_name,
         sortable: true
-      },
+      },  
       {
         name: 'Jurisdiction Name',
         selector: (row: { jurisdiction_name: any; }) => row.jurisdiction_name,
@@ -62,7 +69,7 @@ const MyVotingHistory: React.FC = () => {
         sortable: true        
       },      
       {
-        name: 'Is Absentee Vote',
+        name: 'Is Absentee Voter',
         selector: (row: { is_absentee_voter: any; }) => row.is_absentee_voter,
         sortable: true
       },  
@@ -86,35 +93,75 @@ const MyVotingHistory: React.FC = () => {
       .catch((err) => {
         console.log(err);
       });
+    const abortController = new AbortController();
+      void async function fetchCounties() {
+        try {
+          const url = process.env.REACT_API_BASE_URL + '/api/counties';
+          const response = await fetch(url, { signal: abortController.signal });
+          setCounties(await response.json());
+          setIsCountyDropdownLoading(false);
+        } catch (error) {
+          console.log('error', error);
+        }
+      }();
+      return () => {
+        abortController.abort();
+      }      
   }, []);
-
-  const [voterData, setVoterData] = useState([]);
   
+  function validateCountySelection(countySelected): void {
+    setResponseMessage('');
+    if(countySelected == "0"){
+      setReadyForSearch(false);
+    } else {
+      setCountyName(countySelected);
+    }
+  }
   const submitForm = async (event: React.FormEvent<HTMLFormElement>) => {
     // Preventing the page from reloading
     event.preventDefault();
     setIsLoading(true);
-    const urlBase = process.env.REACT_API_BASE_URL + `/api/votinghistory/${qvfDate}`;
-    let urlSuffix = '';
-    if(voterId) {
-      urlSuffix = `/voterid:${voterId}`;
-    } else {
-      if(voterCounty) {
-        urlSuffix = `/voterCounty:${voterCounty}/voterZip:${voterZip}/voterLastName:${voterLastName}/voterFirstName:${voterFirstName}`;
+    const voterSummaryPromise = new Promise(async (resolve, reject) => {
+      await axios.get(process.env.REACT_API_BASE_URL + `/api/voter-summary/${qvfDate}/${countyName}/${voterZip}/${voterLastName}/${voterFirstName}/${voterYearOfBirth}`, { headers: authHeader() })
+      .then(async resp => {
+        if(resp.status === 200) {        
+          setVoterSummary(resp.data[0]);
+          console.log(resp.data);
+          if(resp.data.length === 1) {
+            await axios.get(process.env.REACT_API_BASE_URL + `/api/voter-history/${qvfDate}/${resp.data[0].voter_identification_number}`,{ headers: authHeader() })
+            .then(respHistory => {
+              if(respHistory.status === 200) {
+                setVoterHistory(respHistory.data);
+              }              
+            }).catch(error => {
+              console.log(error);
+            });
+            setIsLoading(false);
+          }
+          resolve(resp);
+        } else if(resp.status === 403) {
+          reject(resp.status);
+          setRedirect("/login");
+        } else {
+          reject(resp.status);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+      });
+    });
+    const allPromises = Promise.allSettled( [voterSummaryPromise] );
+    allPromises.then((allResults) => allResults.forEach((result) => {
+      if(result.status === 'fulfilled') {
+        setResponseMessage("Success");  
+        setSummaryCallComplete(true);
+        setHistoryCallComplete(true);
       }
-    }
-
-    const resp = await axios.get(urlBase + urlSuffix, { headers: authHeader() });
-    if(resp.status === 200) {
-      setResponseMessage("Success");
-      //const voterInfo: VoterType = {county_name: "LIVINGSTON", last_name: "MNBC", first_name: "ABHJABD", middle_name: "K", voter_identification_number: "9420642"};
-      setVoterInfo(voterInfo);
-      setVoterId(voterId);
-      setVoterData(resp.data);
-    } else {      
-      setResponseMessage("Error!");
-    }
-    setIsLoading(false);
+      if(result.status === 'rejected') {
+        setResponseMessage(result.reason);        
+      }    
+      setIsLoading(false);    
+    }));    
   }
   if(redirect) {
     return <Redirect to={redirect} />
@@ -133,31 +180,41 @@ const MyVotingHistory: React.FC = () => {
                   value={qvfDate}
                   onChange={(e) => setQvfDate(e.currentTarget.value)}
                 >
-                  {qvfDates.map((qvf) => (
+                  {qvfDates.map((qvf) => (                    
                     <option key={qvf.table_name} value={qvf.table_name}>
-                      {qvf.table_name}
+                      {qvf.table_name.split('_')[1]}
                     </option>
                   ))}
                 </Form.Select>    
               </label>
             </Col>
             <Col>
-              <label>
-                Voter Id
-                <Form.Control
-                  value={voterId}
-                  onChange={(e) => setVoterId(e.target.value)}
-                  type="text"
-                  placeholder="Enter Voter Id"
-                  className="input"
-                />
-              </label>
-            </Col>
-            --- OR ---
+                {
+                isCountyDropdownLoading ? <Spinner animation="border" variant='danger' role="status"></Spinner>
+                : null
+                }             
+                <label>
+                  County
+                    <Form.Select required
+                      disabled={isCountyDropdownLoading}
+                      value={countyName}
+                      onChange={(e) => validateCountySelection(e.currentTarget.value)}>
+                        <option value=""> --- Select County --- </option>  
+                        {
+                          counties.map((county) => (
+                            <option key={county.county_name} value={county.county_name}>
+                              {county.county_name}
+                            </option>
+                          ))
+                        }
+                    </Form.Select>    
+                </label>    
+              </Col>            
             <Col>
               <label>
                 Zip
                 <Form.Control
+                  required
                   value={voterZip}
                   onChange={(e) => setVoterZip(e.target.value)}
                   type="text"
@@ -170,6 +227,7 @@ const MyVotingHistory: React.FC = () => {
               <label>
                 Last Name
                 <Form.Control
+                  required
                   value={voterLastName}
                   onChange={(e) => setVoterLastName(e.target.value)}
                   type="text"
@@ -182,6 +240,7 @@ const MyVotingHistory: React.FC = () => {
               <label>
                 First Name
                 <Form.Control
+                  required
                   value={voterFirstName}
                   onChange={(e) => setVoterFirstName(e.target.value)}
                   type="text"
@@ -189,19 +248,20 @@ const MyVotingHistory: React.FC = () => {
                   className="input"                
                 />
               </label>
-            </Col>
+            </Col>     
             <Col>
               <label>
-                County
+                Year of Birth
                 <Form.Control
-                  value={voterCounty}
-                  onChange={(e) => setVoterCounty(e.target.value)}
+                  required
+                  value={voterYearOfBirth}
+                  onChange={(e) => setVoterYearOfBirth(e.target.value)}
                   type="text"
-                  placeholder="Enter County"
+                  placeholder="Enter Year of Birth"
                   className="input"                
                 />
               </label>
-            </Col>            
+            </Col>                  
           </Row>
           <Row>
             <Col>
@@ -214,17 +274,60 @@ const MyVotingHistory: React.FC = () => {
           </FormGroup>
         </Form>
       </div>
+      <br/>
+      <div>
+        {
+          <>
+            {
+            isLoading ? 
+              <Spinner animation="border" variant='danger' role="status"><span className="sr-only">Loading...</span></Spinner>
+              : voterSummary ? 
+                <Card className="info-card">
+                    <Card.Body style={{ color: "black" }}>
+                        <Card.Title>{voterSummary.voter_full_name}</Card.Title>
+                        <Card.Subtitle>{qvfDate}</Card.Subtitle>
+                        <Card.Text style={{ color: "black" }}>
+                          Registration Date: {voterSummary.registration_date}<br />
+                          Voter Identification Number: {voterSummary.voter_identification_number}<br />
+                          Year of birth: {voterSummary.year_of_birth}<br />
+                          Address: {voterSummary.full_address}<br />
+                        </Card.Text>                    
+                    </Card.Body>
+                </Card>
+              : <span></span>
+            } 
+          </>          
+        }      
+      </div>
+      <div>
+        <>
+        {
+          (summaryCallComplete && voterSummary === undefined) ? <span>No record found for criteria: {qvfDate} {countyName} {voterZip} {voterLastName} {voterFirstName} {voterYearOfBirth}</span>
+          : <span></span>
+        }
+        </>
+      </div>     
       <div>
         {
           <>
           {
             isLoading ? 
             <Spinner animation="border" variant='danger' role="status"><span className="sr-only">Loading...</span></Spinner>
-            : voterData.length > 0 ? <><VoterInformation stringProp={voterId} /><DataTable columns={columns} data={voterData} /></>
+            : voterHistory.length > 0 ? <><h4>Voting history according to QVF {qvfDate}</h4><DataTable columns={columns} data={voterHistory} /></>
             : <span></span>
           }    
           </>
         }      
+      </div>
+      <div>
+        <>
+        <>
+        {
+          (historyCallComplete && voterHistory.length == 0) ? <span>No Voting history found.</span>
+          : <span></span>
+        }
+        </>        
+        </>
       </div>
       </>
     );

@@ -26,88 +26,42 @@ const getQvfDates = (request, response) => {
   });
 }
 
-const getVoterById = (request, response) => {
-  const id = parseInt(request.params.id);
-
-  pool.query('SELECT * FROM qvf_20220901_v WHERE voter_identification_number = $1', [id], (error, results) => {
-    if (error) {
-      throw error;
-    }
-    response.status(200).json(results.rows);
-  });
-}
-
-const getVoterHistoryById = (request, response) => {
-  const id = parseInt(request.params.id);
+const getVoter = (request, response) => {
   const qvf = request.params.qvf;
-  pool.query('SELECT * FROM ' + qvf + 'h WHERE voter_identification_number = $1 order by election_date desc', [id], (error, results) => {
+  const county_name = request.params.county_name;
+  const zip_code = request.params.zip_code;
+  const last_name = request.params.last_name;
+  const first_name = request.params.first_name;
+  const year_of_birth = parseInt(request.params.year_of_birth);
+  const query = "SELECT v.voter_identification_number, concat_ws(' ', v.last_name, v.middle_name, v.first_name) as voter_full_name, v.county_name, v.year_of_birth, " +
+                " to_char(v.registration_date, 'MON-DD-YYYY') as registration_date, concat_ws(' ', v.street_number, v.street_name, v.street_type, v.city, v.state, v.zip_code) as full_address FROM " 
+                + qvf + 
+                " v WHERE v.county_name = $1 and v.zip_code = $2 and upper(v.last_name) = upper($3) and upper(v.first_name) = upper($4) and v.year_of_birth = $5";
+  pool.query(query, [county_name, zip_code, last_name, first_name, year_of_birth], (error, results) => {
     if (error) {
       throw error;
     }
     response.status(200).json(results.rows);
-    /*var voterInformationHeader = { "voter_identification_number": "33264099", "first_name": "Joe", "middle_name": "", "last_name": "Schmoe", "county_name": "BARAGA"};
-    var voterHistory = [{ 
-        "qvfDate" : "2019/01/15", 
-        "votingHistory" : [
-          {"electionDate": "2010/08/03", "votingMethod": "I"},
-          {"electionDate": "2010/11/02", "votingMethod": "I"},
-          {"electionDate": "2012/11/06", "votingMethod": "I"},
-          {"electionDate": "2014/11/04", "votingMethod": "I"},
-          {"electionDate": "2016/11/08", "votingMethod": "I"},
-          {"electionDate": "2017/11/07", "votingMethod": "I"},
-          {"electionDate": "2018/08/07", "votingMethod": "I"},
-          {"electionDate": "2018/11/06", "votingMethod": "I"},
-          {"electionDate": "2020/03/10", "votingMethod": "I"},
-          {"electionDate": "2020/08/04", "votingMethod": "I"},
-          {"electionDate": "2020/11/03", "votingMethod": "I"},
-          {"electionDate": "2021/11/02", "votingMethod": "I"}
-        ]
-      }, { 
-        "qvfDate" : "2019/10/01", 
-        "votingHistory" : [
-          {"electionDate": "2010/08/03", "votingMethod": "I"},
-          {"electionDate": "2010/11/02", "votingMethod": "I"},
-          {"electionDate": "2012/11/06", "votingMethod": "I"},
-          {"electionDate": "2014/11/04", "votingMethod": "I"},
-          {"electionDate": "2016/11/08", "votingMethod": "I"},
-          {"electionDate": "2017/11/07", "votingMethod": "I"},
-          {"electionDate": "2018/08/07", "votingMethod": "I"},
-          {"electionDate": "2018/11/06", "votingMethod": "I"},
-          {"electionDate": "2020/03/10", "votingMethod": "I"},
-          {"electionDate": "2020/08/04", "votingMethod": "I"},
-          {"electionDate": "2020/11/03", "votingMethod": "I"},
-          {"electionDate": "2021/11/02", "votingMethod": "I"}
-        ]
-      }, { 
-        "qvfDate" : "2020/03/01", 
-        "votingHistory" : [
-          {"electionDate": "2010/08/03", "votingMethod": "I"},
-          {"electionDate": "2010/11/02", "votingMethod": "I"},
-          {"electionDate": "2012/11/06", "votingMethod": "I"},
-          {"electionDate": "2014/11/04", "votingMethod": "I"},
-          {"electionDate": "2016/11/08", "votingMethod": "I"},
-          {"electionDate": "2017/11/07", "votingMethod": "I"},
-          {"electionDate": "2018/08/07", "votingMethod": "I"},
-          {"electionDate": "2018/11/06", "votingMethod": "I"},
-          {"electionDate": "2020/03/10", "votingMethod": "I"},
-          {"electionDate": "2020/08/04", "votingMethod": "I"},
-          {"electionDate": "2020/11/03", "votingMethod": "I"},
-          {"electionDate": "2021/11/02", "votingMethod": "I"}
-        ]
-      }
-    ];
-    var voterHistoryAcrossQVFJson = {
-      "voterInformationHeader": voterInformationHeader,
-      "votingHistory": voterHistory
-    };
-    response.status(200).json(voterHistoryAcrossQVFJson);*/
   });
 }
 
+const getVoterHistory = (request, response) => {
+  const qvf = request.params.qvf;
+  const id = parseInt(request.params.id);
+  const query = "select to_char(vh.election_date, 'MON-DD-YYYY') as election_date, vh.county_name, vh.jurisdiction_name, vh.is_absentee_voter " +
+                " from " + qvf + "h vh " + 
+                " where vh.voter_identification_number = $1";
+  pool.query(query, [id], (error, results) => {
+    if (error) {
+      throw error;
+    }
+    response.status(200).json(results.rows);
+  });
+}
 
 module.exports = {
   getQvfDates,
   getCounties,
-  getVoterById,
-  getVoterHistoryById,
+  getVoter,
+  getVoterHistory,
 }

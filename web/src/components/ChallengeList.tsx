@@ -9,6 +9,8 @@ import authHeader from "../services/auth-header";
 import CountyInformation from "./CountyInformation";
 import { CountySummary } from "../types/county.type";
 import { CountyMetadata } from "../types/countymetadata.type";
+import { resourceLimits } from "worker_threads";
+import e from "express";
 
 export interface RegisteredVoter {
   challenge_codes: string;
@@ -165,6 +167,7 @@ export const ChallengeList: React.FC = () => {
     setCountyMetadataInfo(null);
     if(countySelected == "0"){
       setReadyForSearch(false);
+      setHideDownloadButton(true);
     } else {
       setCountyName(countySelected);
       fetchJurisdictions(countySelected);
@@ -186,8 +189,9 @@ export const ChallengeList: React.FC = () => {
 
   function validateJurisdictionSelection(jurisdictionSelected): void {
     if(jurisdictionSelected == "0"){
-      setReadyForSearch(false);    
+      setReadyForSearch(false);
     } else {
+      setReadyForSearch(true);
       setJurisdictionName(jurisdictionSelected);
       fetchPrecincts(jurisdictionSelected);
     }
@@ -200,6 +204,7 @@ export const ChallengeList: React.FC = () => {
       .then((precincts) => {
         setPrecincts(precincts);
         setIsPrecinctDropdownLoading(false);
+        setPrecinctName("0");
       })
       .catch((err) => {
         console.log(err);
@@ -208,7 +213,7 @@ export const ChallengeList: React.FC = () => {
 
   function validatePrecinctSelection(precinctSelected): void {
     if(precinctSelected == "0"){
-      setReadyForSearch(false);
+      setReadyForSearch(true);
     } else {
       setPrecinctName(precinctSelected);
       setReadyForSearch(true);
@@ -227,25 +232,82 @@ export const ChallengeList: React.FC = () => {
     // Preventing the page from reloading
     event.preventDefault();    
     setIsLoading(true);
-    setResponseMessage("");  
+    setResponseMessage(""); 
+    setHideDownloadButton(true);
+    let challenge_list_url = process.env.REACT_API_BASE_URL + `/api/challenge-list/${countyName}/${jurisdictionName}/`;
+    if(precinctName != "0") {
+      challenge_list_url = challenge_list_url + `${precinctName}`;
+    }
     let endpoints = [
       process.env.REACT_API_BASE_URL + `/api/county-summary/${countyName}`,
       process.env.REACT_API_BASE_URL + `/api/county-metadata/${countyName}`,
-      process.env.REACT_API_BASE_URL + `/api/challenge-list/${countyName}/${jurisdictionName}/${precinctName}`
+      challenge_list_url
     ];
-    Promise.all( endpoints.map( (endpoint) => axios.get(endpoint, { headers: authHeader() }) ) ).then(([{data: countySummaryInfo}, {data: countyMetadataInfo}, {data: challengeableVoters}]) => {
-      countySummaryInfo.county_name = countyName;
-      setCountySummaryInfo(countySummaryInfo);
-      setCountyMetadataInfo(countyMetadataInfo[0]);
-      setChallengeableVoters(challengeableVoters);
-      setResponseMessage("Success");
-      setIsLoading(false);
-      if(challengeableVoters.length === 0) {
-        setHideDownloadButton(true);
-      } else {
-        setHideDownloadButton(false);
-      }      
+    const countySummaryPromise = new Promise(async (resolve, reject) => {
+      await axios.get(endpoints[0])
+      .then(resp => {
+        if(resp.status === 200) {        
+          setCountySummaryInfo(resp.data);
+          resolve(resp);
+        } else if(resp.status === 403) {
+          reject(resp.status);
+          setRedirect("/login");
+        } else {
+          reject(resp.status);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+      });
     });
+    const countyMetadataPromise = new Promise(async (resolve, reject) => {
+      await axios.get(endpoints[1])
+      .then(resp => {
+        if(resp.status === 200) {
+          setCountyMetadataInfo(resp.data[0]);
+          resolve(resp);
+        } else if(resp.status === 403) {
+          reject(resp.status);
+          setRedirect("/login");
+        } else {
+          reject(resp.status);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+      });
+    });
+    const challengeListPromise = new Promise((resolve, reject) => {
+      axios.get(endpoints[2], { headers: authHeader() })
+      .then(resp => {
+        if(resp.status === 200) {
+          setChallengeableVoters(resp.data);                  
+          console.log(resp.data.length);
+          if(resp.data.length > 0) {
+            setHideDownloadButton(false);
+          }
+          resolve(resp);
+        } else if(resp.status === 403) {
+          reject(resp.status);
+          setRedirect("/login");
+        } else {
+          reject(resp.status);
+        }
+      })
+      .catch(error => {        
+        reject(error);
+      });  
+    });
+    const allPromises = Promise.allSettled( [countySummaryPromise, countyMetadataPromise, challengeListPromise] );
+    allPromises.then((allResults) => allResults.forEach((result) => {
+      if(result.status === 'fulfilled') {
+        setResponseMessage("Success");                
+      }
+      if(result.status === 'rejected') {
+        setResponseMessage(result.reason);        
+      }    
+      setIsLoading(false);    
+    }));
   }
 
   if(redirect) {
@@ -262,8 +324,8 @@ export const ChallengeList: React.FC = () => {
                 : null
                 }             
                 <label>
-                  County
-                    <Form.Select
+                  County (required)
+                    <Form.Select required
                       disabled={isCountyDropdownLoading}
                       value={countyName}
                       onChange={(e) => validateCountySelection(e.currentTarget.value)}>
@@ -284,8 +346,8 @@ export const ChallengeList: React.FC = () => {
                 : null
                 }             
                 <label>
-                  Jurisdiction
-                    <Form.Select
+                  Jurisdiction (required)
+                    <Form.Select required
                       disabled={isJurisdictionDropdownLoading}
                       value={jurisdictionName}
                       onChange={(e) => validateJurisdictionSelection(e.currentTarget.value)}>
@@ -338,13 +400,11 @@ export const ChallengeList: React.FC = () => {
               : ""
           }
           {
-            
-          }
-          {
             !isLoading ?  
               (responseMessage === 'Success') ? 
                   <>
-                    <CountyInformation countySummary={countySummaryInfo} countyMetadata={countyMetadataInfo}/>                 
+                    <CountyInformation countySummary={countySummaryInfo} countyMetadata={countyMetadataInfo}/>
+                    <p>Latest Ghostbusting updates from 2022-09-16 have been applied.</p>
                     <p>
                       <CSVLink hidden={hideDownloadButton} data={challengeableVoters} filename={countyName + '-' + jurisdictionName + '-' + precinctName + '-challenge-list.csv'}>
                         <Button className="button" color="red" size={'lg'}>Download results</Button>
