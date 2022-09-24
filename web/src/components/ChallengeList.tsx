@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import axios from "axios";
 import DataTable, { TableColumn } from 'react-data-table-component';
 import { Button, Col, Form, FormGroup, Row, Spinner } from "react-bootstrap";
-import {CSVLink, CSVDownload} from 'react-csv';
+import {CSVLink} from 'react-csv';
 import AuthService from "../services/auth.service";
 import { Redirect } from "react-router-dom";
 import authHeader from "../services/auth-header";
@@ -257,7 +257,10 @@ export const ChallengeList: React.FC = () => {
         }
       })
       .catch(error => {
-        console.log(error);
+        if(error.response.status === 403) {        
+          setRedirect("/login");
+        }
+        reject(error.response.responseMessage);
       });
     });
     const countyMetadataPromise = new Promise(async (resolve, reject) => {
@@ -266,15 +269,15 @@ export const ChallengeList: React.FC = () => {
         if(resp.status === 200) {
           setCountyMetadataInfo(resp.data[0]);
           resolve(resp);
-        } else if(resp.status === 403) {
-          reject(resp.status);
-          setRedirect("/login");
         } else {
           reject(resp.status);
         }
       })
       .catch(error => {
-        console.log(error);
+        if(error.response.status === 403) {
+          setRedirect("/login");
+        }
+        reject(error.response.responseMessage);
       });
     });
     const challengeListPromise = new Promise((resolve, reject) => {
@@ -287,15 +290,15 @@ export const ChallengeList: React.FC = () => {
             setHideDownloadButton(false);
           }
           resolve(resp);
-        } else if(resp.status === 403) {
-          reject(resp.status);
-          setRedirect("/login");
         } else {
           reject(resp.status);
         }
       })
       .catch(error => {        
-        reject(error);
+        if(error.response.status === 403) {
+          setRedirect("/login");
+        }        
+        reject(error.response.responseMessage);
       });  
     });
     const allPromises = Promise.allSettled( [countySummaryPromise, countyMetadataPromise, challengeListPromise] );

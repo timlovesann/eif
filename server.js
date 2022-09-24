@@ -34,6 +34,7 @@ require('./app/routes/auth/user.routes')(app);
 require("./app/routes/common.routes")(app);
 require("./app/routes/ghostbuster.routes")(app);
 require("./app/routes/individual-audit.routes")(app);
+require("./app/routes/download.routes")(app);
 
 const PORT = process.env.PORT || 3000;
 

@@ -17,6 +17,8 @@ import AuthService from "./services/auth.service";
 import News from './components/News';
 import Contact from './components/Contact';
 import ChallengeList from './components/ChallengeList';
+//import VoterData from './components/VoterData';
+import DownloadsPage from './components/DownloadsPage';
 
 type User = {
   username: string
@@ -89,7 +91,20 @@ class AppSideBar extends Component<MyProps, MyState> {
                     </Link>
                   </li>
                 </ul>
-            </li>          
+            </li>  
+            <li>
+                <a href="#downloadPageSubmenu" data-toggle="collapse" aria-expanded="false" className="dropdown-toggle">
+                  <i className="fas fa-glasses"></i>&nbsp;
+                  Downloads
+                </a>
+                <ul className="collapse list-unstyled" id="downloadPageSubmenu">                
+                  <li className="nav-item">
+                    <Link to={"/voter-data"} className="nav-link">
+                      Voter Data
+                    </Link>
+                  </li>                                                                                     
+                </ul>
+            </li>                    
             <li>
                 <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false" className="dropdown-toggle">
                   <i className="fas fa-glasses"></i>&nbsp;
@@ -102,17 +117,11 @@ class AppSideBar extends Component<MyProps, MyState> {
                     </Link>
                   </li>  
                   <li className="nav-item">
-                    <Link to={"/challenge-list-by-precinct"} className="nav-link">
+                    <Link to={"/challenge-list"} className="nav-link">
                       Challenge List
                     </Link>
                   </li>                                                                                    
                 </ul>
-            </li>
-            <li>
-              <Link to={"/news"} className="nav-link">
-                <i className="fas fa-globe"></i>&nbsp;                
-                  News                
-              </Link>
             </li>
             <li>
               <Link to={"/contact"} className="nav-link">
@@ -145,17 +154,7 @@ class AppSideBar extends Component<MyProps, MyState> {
                       Admin
                     </Link>
                   </li>
-                  )}                        
-                  <li className="nav-item">
-                    <Link to={"/about"} className="navbar-brand">
-                      About
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to={"/resources"} className="navbar-brand">
-                      Resources
-                    </Link>
-                  </li>                        
+                  )}
                 </ul>
               </div>
               {currentUser ? (
@@ -195,8 +194,9 @@ class AppSideBar extends Component<MyProps, MyState> {
             <Route exact path="/register" component={Register} />            
             <Route exact path="/profile" component={Profile} />
             <Route path="/ghostbusters-by-county" component={Ghostbusters} />
-            <Route path="/challenge-list-by-precinct" component={ChallengeList} />
+            <Route path="/challenge-list" component={ChallengeList} />
             <Route path="/my-voting-history" component={MyVotingHistory} />
+            <Route path="/voter-data" component={DownloadsPage} />
             <Route path="/audit-my-address" component={AuditMyAddress} />
             <Route path="/about" component={About} />
             <Route path="/resources" component={Resources} />

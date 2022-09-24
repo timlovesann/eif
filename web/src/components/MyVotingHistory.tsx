@@ -139,15 +139,15 @@ const MyVotingHistory: React.FC = () => {
             setIsLoading(false);
           }
           resolve(resp);
-        } else if(resp.status === 403) {
-          reject(resp.status);
-          setRedirect("/login");
         } else {
           reject(resp.status);
         }
       })
       .catch(error => {
-        console.log(error);
+        if(error.response.status === 403) {
+          setRedirect("/login");
+        }
+        reject(error.response.status);
       });
     });
     const allPromises = Promise.allSettled( [voterSummaryPromise] );
