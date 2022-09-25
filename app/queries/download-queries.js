@@ -9,7 +9,7 @@ const pool = new Pool({
 });
 
 const insertDownloadRequest = (user_id, qvf, county_name, jurisdiction_name, sendResponse) => {
-    const query = "insert into qvf_download_requests(requested_by, qvf, county_name, jurisdiction_name) values($1, $2, $3, $4) returning request_id";   
+    const query = "insert into qvf_download_requests(requested_by, qvf, county_name, jurisdiction_name, status) values($1, $2, $3, $4, 'PENDING') returning request_id";   
     pool.query(query, [user_id, qvf, county_name, jurisdiction_name], (error, results) => {
         if (error) {
             throw error;
@@ -21,6 +21,16 @@ const insertDownloadRequest = (user_id, qvf, county_name, jurisdiction_name, sen
 const getDownloadRequestsForUser = (user_id, sendResponse) => {
     const query = "select * from qvf_download_requests where requested_by = $1";    
     pool.query(query, [user_id], (error, results) => {
+        if (error) {
+            throw error;
+        }
+        sendResponse(results.rows);
+    });
+}
+
+const getOldestPendingDownloadRequest = (sendResponse) => {
+    const query = "select * from qvf_download_requests where status = 'PENDING' order by created_at asc limit 1";    
+    pool.query(query, [], (error, results) => {
         if (error) {
             throw error;
         }
@@ -66,6 +76,8 @@ const getJurisdictionQvf = (request, response) => {
 }
 
 module.exports = {
+    getOldestPendingDownloadRequest,
+
     insertDownloadRequest,
     getDownloadRequestsForUser,
     getCountyQvf,

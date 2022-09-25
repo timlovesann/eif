@@ -22,3 +22,9 @@ exports.getDownloadRequestsForUser = (request, response) => {
         response.status(200).json(results);
     });
 }
+
+exports.getOldestPendingDownloadRequest = () => {
+    db.getOldestPendingDownloadRequest(function(result) {
+        console.log(result);
+    });
+}

@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 
 import UserService from "../services/user.service";
-
+import CountdownTimer from './CountdownTimer';
 export default class Home extends Component {
   constructor(props) {
     super(props);
@@ -29,11 +29,12 @@ export default class Home extends Component {
     );
   }
 
-  render() {
+  render() {    
     return (
+      <>    
       <div className="container">
-        <header className="jumbotron">
-          <h3>Release v09222022</h3>
+        <header className="jumbotron">          
+          <h3>Release v09232022</h3>
           <h4>Features Supported</h4>
           <ul>
             <li>Ghostbusting Location Report: Download report of suspect locations canvassed across Michigan</li>            
@@ -46,7 +47,8 @@ export default class Home extends Component {
             <li>Workaround: Sign out by clicking log out at the top right and sign back in.</li>
           </ul>                   
         </header>
-      </div>
+      </div>      
+      </>
     );
   }
 }

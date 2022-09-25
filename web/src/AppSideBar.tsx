@@ -19,6 +19,8 @@ import Contact from './components/Contact';
 import ChallengeList from './components/ChallengeList';
 //import VoterData from './components/VoterData';
 import DownloadsPage from './components/DownloadsPage';
+import CountdownTimer from './components/CountdownTimer';
+
 
 type User = {
   username: string
@@ -30,6 +32,7 @@ type MyState = {
   currentUser: User
 };
 class AppSideBar extends Component<MyProps, MyState> {  
+
   constructor(props) {
     super(props);
     this.logOut = this.logOut.bind(this);
@@ -43,7 +46,6 @@ class AppSideBar extends Component<MyProps, MyState> {
 
   componentDidMount() {
     const user = AuthService.getCurrentUser();
-
     if (user) {
       this.setState({
         currentUser: user,
@@ -71,6 +73,7 @@ class AppSideBar extends Component<MyProps, MyState> {
   }  
   render() {
     const { currentUser, showModeratorBoard, showAdminBoard } = this.state;
+    const michiganMidtermElectionDate = new Date('2022-11-08T07:00:00-04:00').getTime();      
     return (
       <div className="wrapper">
         <nav id="sidebar">
@@ -140,9 +143,10 @@ class AppSideBar extends Component<MyProps, MyState> {
               </button>
               <button className="btn btn-dark d-inline-block d-lg-none ml-auto" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                   <i className="fas fa-align-justify"></i>
-              </button>               
+              </button>
+              <div>&nbsp;<CountdownTimer targetDate={michiganMidtermElectionDate} /></div>
               <div className="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul className="nav navbar-nav ml-auto">
+                <ul className="nav navbar-nav ml-auto">                  
                   <li className="nav-item">
                     <Link to={"/"} className="navbar-brand">
                       Home

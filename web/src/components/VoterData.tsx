@@ -148,6 +148,7 @@ export const VoterData: React.FC = () => {
   } else {
     return (
       <div className="container">
+        <h1>UNDER CONSTRUCTION</h1>
         <Form onSubmit={submitForm}>
           <FormGroup role="form">
               <Row>
