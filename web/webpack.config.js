@@ -18,8 +18,8 @@ var HtmlWebpackPluginConfig = new HtmlWebpackPlugin({
   });
   
 module.exports = {
-  mode: "production",
-  //devtool: 'inline-source-map',
+  mode: "development",
+  devtool: 'inline-source-map',
   entry: __dirname + '/src/index.tsx',
   output: {    
     filename: '[name].[contenthash].js',

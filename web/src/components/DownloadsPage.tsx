@@ -6,6 +6,7 @@ import DownloadService from "../services/DownloadService";
 import authHeader from "../services/auth-header";
 import AuthService from "../services/auth.service";
 import DataTable, { TableColumn } from "react-data-table-component";
+import { saveAs } from 'file-saver';
 
 export interface IDownloadRequest {
     qvf: string;
@@ -14,6 +15,7 @@ export interface IDownloadRequest {
     created_at: string;
     requested_by: string;
     status: string;
+    request_id: number;
 }
 export const DownloadsPage: React.FC = () => {
   const initialDownloadRequestState = {
@@ -22,7 +24,8 @@ export const DownloadsPage: React.FC = () => {
     jurisdiction_name: '',
     created_at: '',
     requested_by: '',
-    status: ''
+    status: '',
+    request_id: null
   };
   const [redirect, setRedirect] = useState(null);
   const [userReady, setUserReady] = useState(false);
@@ -160,9 +163,14 @@ export const DownloadsPage: React.FC = () => {
         console.log(err);
       });
     DownloadService.getDownloadRequests()
-     .then((response: any) => {
+      .then((response: any) => {
         console.log(response.data);
         setDownloadRequests(response.data);    
+      })
+      .catch(error => {
+        if(error.response.status === 403 || error.response.status === 401) {        
+          setRedirect("/login");
+        }
       });
     const abortController = new AbortController();
       void async function fetchCounties() {
@@ -189,7 +197,8 @@ export const DownloadsPage: React.FC = () => {
           jurisdiction_name: response.data.jurisdiction_name,
           created_at: null,
           requested_by: null,
-          status: null
+          status: null,
+          request_id: null
         });
         setRequestId(response.data.request_id);
       setSubmitted(true);      
@@ -200,19 +209,49 @@ export const DownloadsPage: React.FC = () => {
           console.log(response.data);
           setDownloadRequests(response.data);    
         })
+        .catch(error => {
+          if(error.response.status === 403 || error.response.status === 401) {        
+            setRedirect("/login");
+          }
+        });        
     })
     .catch(e => {
-      if(e.response.status === 403) {
+      if(e.response.status === 403 || e.response.status === 401) {
         setRedirect("/login");
       }
     })
   }
+
+  function handleDownload(data: IDownloadRequest) : void {
+    DownloadService.downloadFile(data)
+      .then(response => new Blob([response.data]))
+      .then(blob => {
+        let cn = data.county_name.replaceAll(' ', '-');       
+        let jn = data.jurisdiction_name.replaceAll(' ', '-');
+        saveAs(blob, data.request_id + "_" + data.qvf + "_" + cn + "_" + jn + ".csv");
+      })
+      .catch(error => {
+        console.log(error);
+        if(error.response.status === 403 || error.response.status === 401) {        
+          setRedirect("/login");
+        }
+      });
+  }
   const ExpandedComponent = () => ({ data }) => {
-    return (
-      <>
-        <pre>{JSON.stringify(data, null, 2)}</pre>
-      </>
-    );
+    if(data.status === 'DOWNLOAD') {
+      return (
+        <>
+          <pre>{JSON.stringify(data, null, 2)}</pre>
+          <Button type="button" onClick={() => handleDownload(data)} className="btn">Download</Button>
+        </>
+      )
+    } else {
+      return (
+        <>
+          <pre>{JSON.stringify(data, null, 2)}</pre>
+        </>
+      )
+    };
   };
   function newDownloadRequest() :void {
     setDownloadRequest(initialDownloadRequestState);

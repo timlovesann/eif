@@ -135,6 +135,9 @@ const MyVotingHistory: React.FC = () => {
               }              
             }).catch(error => {
               console.log(error);
+              if(error.response.status === 403 || error.response.status === 401) {        
+                setRedirect("/login");
+              }              
             });
             setIsLoading(false);
           }
@@ -144,7 +147,7 @@ const MyVotingHistory: React.FC = () => {
         }
       })
       .catch(error => {
-        if(error.response.status === 403) {
+        if(error.response.status === 403 || error.response.status === 401) {
           setRedirect("/login");
         }
         reject(error.response.status);

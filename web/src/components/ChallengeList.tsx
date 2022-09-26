@@ -249,15 +249,12 @@ export const ChallengeList: React.FC = () => {
         if(resp.status === 200) {        
           setCountySummaryInfo(resp.data);
           resolve(resp);
-        } else if(resp.status === 403) {
-          reject(resp.status);
-          setRedirect("/login");
         } else {
           reject(resp.status);
         }
       })
       .catch(error => {
-        if(error.response.status === 403) {        
+        if(error.response.status === 403 || error.response.status === 401) {        
           setRedirect("/login");
         }
         reject(error.response.responseMessage);
@@ -274,7 +271,7 @@ export const ChallengeList: React.FC = () => {
         }
       })
       .catch(error => {
-        if(error.response.status === 403) {
+        if(error.response.status === 403 || error.response.status === 401) {
           setRedirect("/login");
         }
         reject(error.response.responseMessage);
@@ -295,7 +292,7 @@ export const ChallengeList: React.FC = () => {
         }
       })
       .catch(error => {        
-        if(error.response.status === 403) {
+        if(error.response.status === 403 || error.response.status === 401) {
           setRedirect("/login");
         }        
         reject(error.response.responseMessage);

@@ -16,5 +16,8 @@ module.exports = function(app) {
   );
 
   app.get("/api/downloads", [authJwt.verifyToken], controller.getDownloadRequestsForUser
-  );  
+  );
+  
+  app.post("/api/download-file", [authJwt.verifyToken], controller.downloadFile
+  );
 };
