@@ -179,12 +179,13 @@ export const ChallengeList: React.FC = () => {
     fetch(process.env.REACT_API_BASE_URL + `/api/jurisdictions/${countyName}`)
       .then((res) => res.json())
       .then((jurisdictions) => {
-        setJurisdictions(jurisdictions);
-        setIsJurisdictionDropdownLoading(false);
+        setJurisdictions(jurisdictions);        
       })
       .catch((err) => {
         console.log(err);
-      });    
+      }).finally(() => {
+        setIsJurisdictionDropdownLoading(false);
+      });   
   }
 
   function validateJurisdictionSelection(jurisdictionSelected): void {

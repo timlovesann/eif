@@ -5,7 +5,7 @@ const rule = new schedule.RecurrenceRule();
 
 const date = require('date-and-time');
 
-rule.second = 16;
+rule.second = 17;
 
 const job = schedule.scheduleJob(rule, function(){   
     console.log(date.format((new Date()),'YYYY/MM/DD HH:mm:ss')); 

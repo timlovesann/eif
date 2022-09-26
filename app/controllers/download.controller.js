@@ -31,9 +31,6 @@ exports.getOldestPendingDownloadRequest = (next) => {
     db.getOldestPendingDownloadRequest(function(result) {
         if(result && result.length > 0) {
             next(result[0]);
-        } else {
-            console.log("No work to do. Shutting down.");
-            process.exit(1);
         }
     });
 }

@@ -1,5 +1,5 @@
 import { response } from "express";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import React, { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { Button, Col, Form, FormGroup, Row, Spinner } from "react-bootstrap";
 import { Redirect } from "react-router-dom";
 import DownloadService from "../services/DownloadService";
@@ -45,7 +45,7 @@ export const DownloadsPage: React.FC = () => {
   const [jurisdictionName, setJurisdictionName] = useState(" --- Select Jurisdiction --- ");  
   const [downloadRequest, setDownloadRequest] = useState<IDownloadRequest>(initialDownloadRequestState);
   const [submitted, setSubmitted] = useState(false);  
-  const [requestId, setRequestId] = useState(null);
+  const [downloading, setDownloading] = useState(false);
   const [readyforSubmit, setReadyForSubmit] = useState(false);
 
   const [downloadRequests, setDownloadRequests] = useState<Array<IDownloadRequest>>([]);
@@ -96,9 +96,7 @@ export const DownloadsPage: React.FC = () => {
     }
   }  
   function validateCountySelection(countySelected): void {
-    console.log("countySelected: " + countySelected);
     if (countySelected === "") {
-      console.log("Invalid county selected: " + countySelected);
       setCountyName(countySelected);
       setReadyForSubmit(false);
     } else {
@@ -110,9 +108,7 @@ export const DownloadsPage: React.FC = () => {
 
   function fetchJurisdictions(countyName: string) {
     setIsJurisdictionDropdownLoading(true);
-    console.log("calling jurisdiction api");
     const url = process.env.REACT_API_BASE_URL + '/api/jurisdictions/' + countyName;
-    console.log(url);
     fetch(url)
       .then((res) => res.json())
       .then((jurisdictions) => {
@@ -120,8 +116,10 @@ export const DownloadsPage: React.FC = () => {
       })
       .catch((err) => {
         console.log(err);         
-      });
-      setIsJurisdictionDropdownLoading(false);
+      })
+      .finally(() => {
+        setIsJurisdictionDropdownLoading(false);
+      });      
   }
 
   function validateJurisdictionSelection(jurisdictionSelected): void {
@@ -156,7 +154,6 @@ export const DownloadsPage: React.FC = () => {
       .then((res) => res.json())
       .then((qvfDates) => {
         setQvfDates(qvfDates);
-        setQvfDate(qvfDates[0].table_name);
         setIsQvfDateLoading(false);
       })
       .catch((err) => {
@@ -188,7 +185,8 @@ export const DownloadsPage: React.FC = () => {
       }    
   }, []);
 
-  function saveDownloadRequest() : void {
+  const saveDownloadRequest = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     DownloadService.createDownloadRequest(downloadRequest)
       .then((response: any) => {
         setDownloadRequest({
@@ -200,7 +198,6 @@ export const DownloadsPage: React.FC = () => {
           status: null,
           request_id: null
         });
-        setRequestId(response.data.request_id);
       setSubmitted(true);      
     })
     .then(() => {
@@ -223,6 +220,7 @@ export const DownloadsPage: React.FC = () => {
   }
 
   function handleDownload(data: IDownloadRequest) : void {
+    setDownloading(true);
     DownloadService.downloadFile(data)
       .then(response => new Blob([response.data]))
       .then(blob => {
@@ -235,6 +233,9 @@ export const DownloadsPage: React.FC = () => {
         if(error.response.status === 403 || error.response.status === 401) {        
           setRedirect("/login");
         }
+      })
+      .finally(() => {
+        setDownloading(false);
       });
   }
   const ExpandedComponent = () => ({ data }) => {
@@ -242,7 +243,7 @@ export const DownloadsPage: React.FC = () => {
       return (
         <>
           <pre>{JSON.stringify(data, null, 2)}</pre>
-          <Button type="button" onClick={() => handleDownload(data)} className="btn">Download</Button>
+          <Button type="button" onClick={() => handleDownload(data)} disabled={downloading} className="btn">Download</Button>
         </>
       )
     } else {
@@ -263,9 +264,12 @@ export const DownloadsPage: React.FC = () => {
     return (
       <div className="container">
           <div>
+            <Form onSubmit={saveDownloadRequest}>
+              <FormGroup role="form">            
                   <Row>
                     <Col>
-                      <label>QVF Date</label>
+                      <label>
+                      QVF Date
                       <select required
                         id="qvf"
                         name="qvf"
@@ -273,12 +277,14 @@ export const DownloadsPage: React.FC = () => {
                         value={qvfDate}
                         onChange={(e) => validateQvfSelection(e.currentTarget.value)}
                       >
+                        <option value=""> --- Select QVF Date --- </option>
                         {qvfDates.map((qvf) => (                    
                           <option key={qvf.table_name} value={qvf.table_name}>
                           {qvf.table_name.split('_')[1]}
                           </option>
                         ))}
-                      </select>                          
+                      </select>
+                      </label>                        
                     </Col>                
                     <Col>
                       {
@@ -330,9 +336,15 @@ export const DownloadsPage: React.FC = () => {
                     </Col>                                 
                   </Row>
                   <Row><Col>&nbsp;</Col></Row>
+                  <Row><Col>Only one request is supported per visit to limit costs associated with computing workloads. Thank you for your understanding.</Col></Row>
+                  <Row><Col>&nbsp;</Col></Row>
+                  <Row><Col>Files are generated in order of receipt at the 17th second of every minute currently. This will change to once a day to limit computing workload costs.</Col></Row>
+                  <Row><Col>&nbsp;</Col></Row>
                   <Row>
-                    <button type="button" onClick={saveDownloadRequest} disabled={!readyforSubmit} className="btn">Generate File</button>
-                  </Row>                
+                    <Button type="submit" disabled={!readyforSubmit || submitted} className="btn">I Understand. Generate File.</Button>
+                  </Row> 
+                </FormGroup>
+              </Form>               
           </div>
         {
           <>

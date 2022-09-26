@@ -111,7 +111,7 @@ const MyVotingHistory: React.FC = () => {
   
   function validateCountySelection(countySelected): void {
     setResponseMessage('');
-    if(countySelected == "0"){
+    if(countySelected === ""){
       setReadyForSearch(false);
     } else {
       setCountyName(countySelected);

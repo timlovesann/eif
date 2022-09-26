@@ -30,7 +30,7 @@ const updateDownloadRequestStatus = (request_id, status, done) => {
 }
 
 const getDownloadRequestsForUser = (user_id, sendResponse) => {
-    const query = "select * from qvf_download_requests where requested_by = $1";    
+    const query = "select * from qvf_download_requests where requested_by = $1 order by created_at desc";    
     pool.query(query, [user_id], (error, results) => {
         if (error) {
             throw error;
