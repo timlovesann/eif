@@ -336,10 +336,11 @@ export const DownloadsPage: React.FC = () => {
                     </Col>                                 
                   </Row>
                   <Row><Col>&nbsp;</Col></Row>
-                  <Row><Col>Only one request is supported per visit to limit costs associated with computing workloads. Thank you for your understanding.</Col></Row>
+                  <Row><Col><i className="fa fa-info-circle" aria-hidden="true"></i> Only one request is supported per visit to limit costs associated with computing workloads. Thank you for your understanding.</Col></Row>
                   <Row><Col>&nbsp;</Col></Row>
                   <Row><Col>Files are generated in order of receipt at the 17th second of every minute currently. This will change to once a day to limit computing workload costs.</Col></Row>
                   <Row><Col>&nbsp;</Col></Row>
+                  <Row><Col><b>UNLIMITED DOWNLOADS</b> are reserved for our EIF Volunteers and financial contributors.</Col></Row>
                   <Row>
                     <Button type="submit" disabled={!readyforSubmit || submitted} className="btn">I Understand. Generate File.</Button>
                   </Row> 

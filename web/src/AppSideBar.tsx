@@ -84,7 +84,7 @@ class AppSideBar extends Component<MyProps, MyState> {
           <ul className="list-unstyled components">
             <li>
                 <a href="#homeSubmenu" data-toggle="collapse" aria-expanded="false" className="dropdown-toggle">
-                  <i className="fas fa-home"></i>&nbsp;
+                  <i className="fas fa-user-secret"></i>&nbsp;
                   Audit
                 </a>
                 <ul className="collapse list-unstyled" id="homeSubmenu">
@@ -97,7 +97,7 @@ class AppSideBar extends Component<MyProps, MyState> {
             </li>  
             <li>
                 <a href="#downloadPageSubmenu" data-toggle="collapse" aria-expanded="false" className="dropdown-toggle">
-                  <i className="fas fa-glasses"></i>&nbsp;
+                  <i className="fas fa-download"></i>&nbsp;
                   Downloads
                 </a>
                 <ul className="collapse list-unstyled" id="downloadPageSubmenu">                
@@ -128,7 +128,7 @@ class AppSideBar extends Component<MyProps, MyState> {
             </li>
             <li>
               <Link to={"/contact"} className="nav-link">
-                  <i className="fas fa-paper-plane"></i>&nbsp;
+                  <i className="fas fa-address-card"></i>&nbsp;
                   Contact
               </Link>
             </li>
