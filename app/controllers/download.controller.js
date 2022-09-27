@@ -45,6 +45,14 @@ exports.generateQvf = (req) => {
 }
 
 exports.downloadFile = (request, response) => {
+    const requested_by = request.body.id;
+    const logged_in_user_id = parseJwt(request.headers["x-access-token"]).id;
+    if(!logged_in_user_id || (requested_by != logged_in_user_id)) {
+        return response.status(403).send({
+            message: "I see you trying to my api directly. I'm okay with that as long as you request only data you're authorized for. But you've broken that rule. This incident will be reported. ¯\_(ツ)_/¯"
+        });
+    }
+
     const request_id = request.body.request_id;
     const qvf = request.body.qvf;
     const county_name = request.body.county_name.replace(/\s/g, '-');
@@ -60,7 +68,7 @@ exports.downloadFile = (request, response) => {
     filestream.pipe(response);
     filestream.on("error", (e) => {
         filestream.close();
-        console.log("Error" + e);        
+        console.log("Error" + e);
     });
     filestream.on("finish", () => {
         filestream.close();

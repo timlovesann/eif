@@ -8,14 +8,14 @@ verifyToken = (req, res, next) => {
 
   if (!token) {
     return res.status(403).send({
-      message: "No token provided!"
+      message: "No token provided. No can do what you ask me to. ¯\_(ツ)_/¯"
     });
   }
 
   jwt.verify(token, config.secret, (err, decoded) => {
     if (err) {
       return res.status(401).send({
-        message: "Unauthorized!"
+        message: "Unauthorized. You no gib valid token, I no gib data. ¯\_(ツ)_/¯"
       });
     }
     req.userId = decoded.id;
@@ -34,7 +34,7 @@ isAdmin = (req, res, next) => {
       }
 
       res.status(403).send({
-        message: "Require Admin Role!"
+        message: "You not admin. I no can do. ¯\_(ツ)_/¯ ."
       });
       return;
     });

@@ -25,13 +25,13 @@ exports.signup = (req, res) => {
           }
         }).then(roles => {
           user.setRoles(roles).then(() => {
-            res.send({ message: "User registered successfully!" });
+            res.send({ message: "User registered successfully. Next, your admin needs to approve your account before you can login successfully." });
           });
         });
       } else {
         // user role = 1
         user.setRoles([1]).then(() => {
-          res.send({ message: "User registered successfully!" });
+          res.send({ message: "User registered successfully. Next, your admin needs to approve your account before you can login successfully." });
         });
       }
     })
@@ -48,10 +48,10 @@ exports.signin = (req, res) => {
   })
     .then(user => {
       if (!user) {
-        return res.status(404).send({ message: "User Not found." });
+        return res.status(404).send({ message: "Login failed. Please check your credentials. ¯\_(ツ)_/¯" });
       }
       if(!user.isActive) {
-        return res.status(400).send({ message: "User Not Activated. Please contact admin." });
+        return res.status(400).send({ message: "User Not Activated. Admin has been notified to approve your access. You'll be notified via email at " + user.email + " when account has been activated." });
       }
       var passwordIsValid = bcrypt.compareSync(
         req.body.password,
@@ -61,7 +61,7 @@ exports.signin = (req, res) => {
       if (!passwordIsValid) {
         return res.status(401).send({
           accessToken: null,
-          message: "Unable to login. Please check your credentials."
+          message: "Login failed. Please check your credentials. ¯\_(ツ)_/¯"
         });
       }
 
