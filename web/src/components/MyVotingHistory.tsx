@@ -24,7 +24,7 @@ export interface Voter {
 export interface VoterHistory {
   county_name: string;
   jurisdiction_name: string;
-  election_date: string;
+  election_date: Date;
   is_absentee_voter: boolean;
 }
 
@@ -36,7 +36,7 @@ const MyVotingHistory: React.FC = () => {
   const [currentUser, setCurrentUser] = useState({username: ""});
 
   const [qvfDates, setQvfDates] = useState([]);
-  const [qvfDate, setQvfDate] = useState(" --- Select QVF Date --- ");
+  const [qvfDate, setQvfDate] = useState(" --- Select QVF --- ");
 
   const [isCountyDropdownLoading, setIsCountyDropdownLoading] = useState(true);
   const [counties, setCounties] = useState([]);
@@ -87,7 +87,7 @@ const MyVotingHistory: React.FC = () => {
       .then((res) => res.json())
       .then((qvfDates) => {
         setQvfDates(qvfDates);
-        setQvfDate(qvfDates[0].table_name);
+        setQvfDate(" --- Select QVF Date --- ");
         setIsLoading(false);
       })
       .catch((err) => {
@@ -175,7 +175,7 @@ const MyVotingHistory: React.FC = () => {
         <Form onSubmit={submitForm}>
           <FormGroup role="form">
           <Row>
-            <Col>
+            <Col>              
               <label>
                 QVF Date
                 <Form.Select
@@ -183,6 +183,7 @@ const MyVotingHistory: React.FC = () => {
                   value={qvfDate}
                   onChange={(e) => setQvfDate(e.currentTarget.value)}
                 >
+                  <option> --- Select QVF --- </option>
                   {qvfDates.map((qvf) => (                    
                     <option key={qvf.table_name} value={qvf.table_name}>
                       {qvf.table_name.split('_')[1]}
@@ -195,7 +196,8 @@ const MyVotingHistory: React.FC = () => {
                 {
                 isCountyDropdownLoading ? <Spinner animation="border" variant='danger' role="status"></Spinner>
                 : null
-                }             
+                }
+                <div className="col-lg-24">
                 <label>
                   County
                     <Form.Select required
@@ -211,13 +213,17 @@ const MyVotingHistory: React.FC = () => {
                           ))
                         }
                     </Form.Select>    
-                </label>    
+                </label>
+                </div>
               </Col>            
             <Col>
+              <div className="col-lg-9">
               <label>
                 Zip
                 <Form.Control
                   required
+                  minLength={5}
+                  maxLength={5}
                   value={voterZip}
                   onChange={(e) => setVoterZip(e.target.value)}
                   type="text"
@@ -225,12 +231,15 @@ const MyVotingHistory: React.FC = () => {
                   className="input"                
                 />
               </label>
+              </div>
             </Col>
             <Col>
               <label>
                 Last Name
                 <Form.Control
                   required
+                  minLength={1}
+                  maxLength={25}
                   value={voterLastName}
                   onChange={(e) => setVoterLastName(e.target.value)}
                   type="text"
@@ -244,6 +253,8 @@ const MyVotingHistory: React.FC = () => {
                 First Name
                 <Form.Control
                   required
+                  minLength={1}
+                  maxLength={20}
                   value={voterFirstName}
                   onChange={(e) => setVoterFirstName(e.target.value)}
                   type="text"
@@ -257,6 +268,8 @@ const MyVotingHistory: React.FC = () => {
                 Year of Birth
                 <Form.Control
                   required
+                  minLength={4}
+                  maxLength={4}
                   value={voterYearOfBirth}
                   onChange={(e) => setVoterYearOfBirth(e.target.value)}
                   type="text"

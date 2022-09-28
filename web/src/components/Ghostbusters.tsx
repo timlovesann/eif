@@ -38,6 +38,7 @@ export const Ghostbusters: React.FC = () => {
   const [responseMessage, setResponseMessage] = useState("");  
   const [locations, setLocations] = useState([]);
   const [hideDownloadButton, setHideDownloadButton] = useState(true);
+  const [emptyLocationDataMessage, setEmptyLocationDataMessage] = useState("");  
 
   const columns: TableColumn<Ghost>[] = useMemo(() => [
       {
@@ -112,12 +113,16 @@ export const Ghostbusters: React.FC = () => {
   }, []);  
 
   function validateCountySelection(countySelected): void {
-      if(countySelected == "0"){
+    console.log("county selected: " + countySelected);
+      if(countySelected === ""){
         setReadyForSearch(false);    
       } else {
-        setReadyForSearch(true); 
-        setCountyName(countySelected);
+        setReadyForSearch(true);         
       }
+      setCountyName(countySelected);
+      setLocations([]);
+      setHideDownloadButton(true);
+      setEmptyLocationDataMessage("");
     }
 
   const ExpandedComponent = () => ({ data }) => {
@@ -132,19 +137,29 @@ export const Ghostbusters: React.FC = () => {
     event.preventDefault();    
     setIsLoading(true);
     setResponseMessage("");
-    const resp = await axios.get(process.env.REACT_API_BASE_URL + `/api/ghostbuster-locations/${countyName}`, { headers: authHeader() });
-    if(resp.status === 200) {
-      setResponseMessage("Success");
-      setLocations(resp.data);
-      if(resp.data.length === 0) {
-        setHideDownloadButton(true);
-      } else {
-        setHideDownloadButton(false);
-      }
-    } else {      
-      setResponseMessage("Error");
-    }
-    setIsLoading(false);
+    await axios.get(process.env.REACT_API_BASE_URL + `/api/ghostbuster-locations/${countyName}`, { headers: authHeader() })
+      .then(resp => {
+        if(resp.status === 200) {
+          setLocations(resp.data);
+          if(resp.data.length > 0) {
+            setHideDownloadButton(false);
+          }
+          if(resp.data.length === 0) {
+            setEmptyLocationDataMessage(`No Ghostbusting locations found for ${countyName}`);
+          }
+          setResponseMessage("Success");
+        } else {
+          setHideDownloadButton(true);
+        }
+      })
+      .catch(error => {        
+        if(error.response.status === 403 || error.response.status === 401) {
+          setRedirect("/login");
+        }        
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }      
   if(redirect) {
     return <Redirect to={redirect} />
@@ -207,7 +222,8 @@ export const Ghostbusters: React.FC = () => {
                                 highlightOnHover 
                                 pagination 
                                 paginationPerPage={10} 
-                                paginationTotalRows={locations.length}/>
+                                paginationTotalRows={locations.length}
+                                noDataComponent={emptyLocationDataMessage}/>
                   </>
               : (responseMessage === 'Error') ? "Error fetching records. Please retry." : ""
               : ""
