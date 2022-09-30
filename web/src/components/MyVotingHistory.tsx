@@ -126,7 +126,6 @@ const MyVotingHistory: React.FC = () => {
       .then(async resp => {
         if(resp.status === 200) {        
           setVoterSummary(resp.data[0]);
-          console.log(resp.data);
           if(resp.data.length === 1) {
             await axios.get(process.env.REACT_API_BASE_URL + `/api/voter-history/${qvfDate}/${resp.data[0].voter_identification_number}`,{ headers: authHeader() })
             .then(respHistory => {

@@ -113,7 +113,6 @@ export const Ghostbusters: React.FC = () => {
   }, []);  
 
   function validateCountySelection(countySelected): void {
-    console.log("county selected: " + countySelected);
       if(countySelected === ""){
         setReadyForSearch(false);    
       } else {

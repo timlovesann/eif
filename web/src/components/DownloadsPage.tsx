@@ -29,7 +29,8 @@ export const DownloadsPage: React.FC = () => {
   };
   const [redirect, setRedirect] = useState(null);
   const [userReady, setUserReady] = useState(false);
-  const [currentUser, setCurrentUser] = useState({ username: "" });
+  const [currentUser, setCurrentUser] = useState();
+  //const [currentUser, setCurrentUser] = useState({ username: "" });
   const [isQvfDateLoading, setIsQvfDateLoading] = useState(false);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
 
@@ -43,6 +44,9 @@ export const DownloadsPage: React.FC = () => {
   const [isJurisdictionDropdownLoading, setIsJurisdictionDropdownLoading] = useState(false);
   const [jurisdictions, setJurisdictions] = useState([]);
   const [jurisdictionName, setJurisdictionName] = useState(" --- Select Jurisdiction --- ");  
+
+  const [jurisdictionOptional, setJurisdictionOptional] = useState(false);
+
   const [downloadRequest, setDownloadRequest] = useState<IDownloadRequest>(initialDownloadRequestState);
   const [submitted, setSubmitted] = useState(false);  
   const [downloading, setDownloading] = useState(false);
@@ -86,7 +90,6 @@ export const DownloadsPage: React.FC = () => {
     setDownloadRequest({ ...downloadRequest, [name]: value });   
   };  
   function validateQvfSelection(qvfSelected): void {
-    console.log("qvfSelected: " + qvfSelected);
     if (qvfSelected === "") {
       console.log("Invalid qvf selected: " + qvfSelected);
     } else {
@@ -108,6 +111,9 @@ export const DownloadsPage: React.FC = () => {
 
   function fetchJurisdictions(countyName: string) {
     setIsJurisdictionDropdownLoading(true);
+    if(jurisdictionOptional) {
+      setReadyForSubmit(true);
+    }
     const url = process.env.REACT_API_BASE_URL + '/api/jurisdictions/' + countyName;
     fetch(url)
       .then((res) => res.json())
@@ -123,10 +129,13 @@ export const DownloadsPage: React.FC = () => {
   }
 
   function validateJurisdictionSelection(jurisdictionSelected): void {
-    console.log("jurisdictionSelected: " + jurisdictionSelected);
     if (jurisdictionSelected === "") {
-      console.log("Invalid jurisdiction selected: " + jurisdictionSelected);
-    } else {
+      if(!jurisdictionOptional) {
+        console.log("Invalid jurisdiction selected: " + jurisdictionSelected);
+      } else {
+        setReadyForSubmit(true);
+      }
+    } else {      
       setReadyForSubmit(true);
       setJurisdictionName(jurisdictionSelected);
       setDownloadRequest( {...downloadRequest, "jurisdiction_name": jurisdictionSelected });
@@ -148,8 +157,11 @@ export const DownloadsPage: React.FC = () => {
       setRedirect("/login"); 
     } 
     setCurrentUser(currentUser);
+    console.log(currentUser.roles);
+    if(currentUser.roles.includes('ROLE_COUNTY-LEAD')) {
+      setJurisdictionOptional(true);
+    }
     setUserReady(true);    
-    let unmounted = false;
     fetch(process.env.REACT_API_BASE_URL + '/api/qvfdates')
       .then((res) => res.json())
       .then((qvfDates) => {
@@ -161,7 +173,6 @@ export const DownloadsPage: React.FC = () => {
       });
     DownloadService.getDownloadRequests()
       .then((response: any) => {
-        console.log(response.data);
         setDownloadRequests(response.data);    
       })
       .catch(error => {
@@ -186,7 +197,7 @@ export const DownloadsPage: React.FC = () => {
   }, []);
 
   const saveDownloadRequest = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+    event.preventDefault();    
     DownloadService.createDownloadRequest(downloadRequest)
       .then((response: any) => {
         setDownloadRequest({
@@ -203,7 +214,6 @@ export const DownloadsPage: React.FC = () => {
     .then(() => {
       DownloadService.getDownloadRequests()
         .then((response: any) => {
-          console.log(response.data);
           setDownloadRequests(response.data);    
         })
         .catch(error => {
@@ -317,7 +327,7 @@ export const DownloadsPage: React.FC = () => {
                       }
                       <label>
                       Jurisdiction
-                      <select required
+                      <select required={!jurisdictionOptional}
                         id="jurisdictionName"
                         name="jurisdictionName"
                         disabled={isJurisdictionDropdownLoading}

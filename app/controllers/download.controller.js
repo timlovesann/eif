@@ -14,7 +14,7 @@ exports.insertDownloadRequest = (request, response) => {
     const qvf = request.body.qvf;
     const county_name = request.body.county_name;
     const jurisdiction_name = request.body.jurisdiction_name;
-    var parsedJwt = parseJwt(token);
+    var parsedJwt = parseJwt(token);    
     db.insertDownloadRequest(parsedJwt.id, qvf, county_name, jurisdiction_name, function(result) {
         response.status(200).json(result[0]);
     });
@@ -35,21 +35,30 @@ exports.getOldestPendingDownloadRequest = (next) => {
     });
 }
 
-exports.generateQvf = (req) => {
-    db.generateQVFWithHistory(req.request_id, req.qvf, req.county_name, req.jurisdiction_name, function(result) { 
-        console.log(result);
-        db.updateDownloadRequestStatus(req.request_id, result, function(){
+exports.generateQvfForJurisdiction = (req) => {
+    db.generateJurisdictionQVFWithHistory(req.request_id, req.qvf, req.county_name, req.jurisdiction_name, function(result) { 
+        db.updateDownloadRequestStatus(req.request_id, result, function() {
+            console.log("Status updated for: request_id --> " + req.request_id + " : " + result);
+        });
+    });
+}
+
+exports.generateQvfForCounty = (req) => {
+    db.generateCountyQVFWithHistory(req.request_id, req.qvf, req.county_name, function(result) { 
+        db.updateDownloadRequestStatus(req.request_id, result, function() {
             console.log("Status updated for: request_id --> " + req.request_id + " : " + result);
         });
     });
 }
 
 exports.downloadFile = (request, response) => {
-    const requested_by = request.body.id;
+    const requested_by = request.body.requested_by;
     const logged_in_user_id = parseJwt(request.headers["x-access-token"]).id;
+    console.log("requested_by: " + requested_by);
+    console.log("logged_in_user_id: " + logged_in_user_id);
     if(!logged_in_user_id || (requested_by != logged_in_user_id)) {
         return response.status(403).send({
-            message: "I see you trying to my api directly. I'm okay with that as long as you request only data you're authorized for. But you've broken that rule. This incident will be reported. ¯\_(ツ)_/¯"
+            message: "I see you trying to call my api directly. I'm okay with that as long as you request only data you're authorized for. But you've broken that rule. This incident will be reported. ¯\_(ツ)_/¯"
         });
     }
 
