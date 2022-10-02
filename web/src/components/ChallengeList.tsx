@@ -18,18 +18,23 @@ export interface RegisteredVoter {
   full_name: string;
   voter_identification_number: string;
   year_of_birth: string;
+  name: string;
+  type: string;   
+  street_number: string;
   street_name: string;
   street_type: string;
   extension: string;
   city: string;
-  zip_code: string;
-  name: string;
-  type: string;  
+  zip_code: string; 
   jurisdiction_name: string;
   precinct: string;
-  first_name: string;
-  middle_name: string;
-  last_name: string;
+  uocava_status_code: string;
+  nov_2020_election_date: string;
+  voted_nov_2020: string;
+  absentee_or_in_person_nov_2020: string;
+  aug_2022_election_date: string;
+  voted_aug_2022: string;
+  absentee_or_in_person_aug_2022; string;
 }
 
 export const ChallengeList: React.FC = () => {
@@ -77,19 +82,7 @@ export const ChallengeList: React.FC = () => {
         selector: (row: { full_name: any; }) => row.full_name,
         sortable: true,
         width: '200px'
-      }, 
-      {
-        name: 'Year of Birth',
-        selector: (row: { year_of_birth: any; }) => row.year_of_birth,
-        sortable: true,
-        width: '100px'
-      },                                           
-      {
-        name: 'Voter Identification Number',
-        selector: (row: { voter_identification_number: any; }) => row.voter_identification_number,
-        sortable: true,
-        width: '200px'
-      },
+      },                                        
       {
         name: 'Name',
         selector: (row: { name: any; }) => row.name,
@@ -100,37 +93,7 @@ export const ChallengeList: React.FC = () => {
         name: 'Type',
         selector: (row: { type: any; }) => row.type,
         sortable: true,
-      },
-      {
-        name: 'Jurisdiction Name',
-        selector: (row: { jurisdiction_name: any; }) => row.jurisdiction_name,
-        sortable: true,          
-        width: '200px'
-      },
-      {
-        name: 'Precinct',
-        selector: (row: { precinct: any; }) => row.precinct,
-        sortable: true,
-        width: '150px'
-      },
-      {
-        name: 'First Name',
-        selector: (row: { first_name: any; }) => row.first_name,        
-        sortable: true,
-        width: '10px'
-      },  
-      {
-        name: 'Middle Name',
-        selector: (row: { middle_name: any; }) => row.middle_name,        
-        sortable: true,
-        width: '10px'
-      },
-      {
-        name: 'Last Name',
-        selector: (row: { last_name: any; }) => row.last_name,        
-        sortable: true,
-        width: '10px'
-      },                                                                                                    
+      }                                                                                                   
     ], []
   );  
   
@@ -404,8 +367,10 @@ export const ChallengeList: React.FC = () => {
             !isLoading ?  
               (responseMessage === 'Success') ? 
                   <>
-                    <CountyInformation countySummary={countySummaryInfo} countyMetadata={countyMetadataInfo}/>
-                    <p>Latest Ghostbusting updates from 2022-09-16 have been applied.</p>
+                    <div>
+                      <CountyInformation countySummary={countySummaryInfo} countyMetadata={countyMetadataInfo}/>
+                    </div>
+                    <p>Ghostbusting data updated as of 2022-09-26.</p>
                     <p>
                       <CSVLink hidden={hideDownloadButton} data={challengeableVoters} filename={countyName + '-' + jurisdictionName + '-' + precinctName + '-challenge-list.csv'}>
                         <Button className="button" color="red" size={'lg'}>Download results</Button>
