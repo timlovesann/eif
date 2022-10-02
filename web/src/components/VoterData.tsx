@@ -176,17 +176,23 @@ export const VoterData: React.FC = () => {
                   <label>
                   County
                   <Form.Select
-                    disabled={isCountyDropdownLoading}
+                    disabled={isCountyDropdownLoading}                    
                     value={countyName}
                     onChange={(e) => validateCountySelection(e.currentTarget.value)}>
+                      <>
                       <option value=""> --- Select County --- </option>
                       {
-                        counties.map((county) => (
-                          <option key={county.county_name} value={county.county_name}>
-                            {county.county_name}
-                          </option>
-                        ))
+                        counties.map((county) => {
+                          console.log(county.county_name);
+                            if(county.county_name === 'WAYNE' || county.county_name === 'OAKLAND' || county.county_name === 'MACOMB') {
+                              (<option disabled key={county.county_name} value={county.county_name}>{county.county_name}</option>)
+                            } else {
+                              (<option disabled key={county.county_name} value={county.county_name}>{county.county_name}</option>)
+                            }
+                          } 
+                        ) 
                       }
+                      </>
                   </Form.Select>
                   </label>
                 </Col>

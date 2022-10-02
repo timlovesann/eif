@@ -50,11 +50,15 @@ const getOldestPendingDownloadRequest = (sendResponse) => {
     });
 }
 const generateCountyQVFWithHistory = (request_id, qvf, county_name, next) => {
-    const filePath = fileConfig.downloadfolder + request_id + "_" + qvf + "_" + county_name.replace(/\s/g, '-') + ".csv";
-    const fs = require("fs");
-    const ws = fs.createWriteStream(filePath);
-    const fastcsv = require("fast-csv");
-    const queryStr = 
+    if(county_name === 'WAYNE' || county_name === 'OAKLAND' || county_name === 'MACOMB') {
+        console.log("Request needs to be handled manually: " + request_id);
+        next("COUNTY_TOO_BIG");
+    } else {
+        const filePath = fileConfig.downloadfolder + request_id + "_" + qvf + "_" + county_name.replace(/\s/g, '-') + ".csv";
+        const fs = require("fs");
+        const ws = fs.createWriteStream(filePath);
+        const fastcsv = require("fast-csv");
+        const queryStr = 
         "WITH " +
             "Aug22 AS (SELECT voter_identification_number, election_date, is_absentee_voter FROM " + qvf + "h WHERE election_date = '08/02/2022'), " +
             "Nov20 AS (SELECT voter_identification_number, election_date, is_absentee_voter FROM " + qvf + "h WHERE election_date = '11/03/2020'), " +
@@ -83,21 +87,22 @@ const generateCountyQVFWithHistory = (request_id, qvf, county_name, next) => {
         "LEFT JOIN Nov16 nov16_vh ON v.voter_identification_number = nov16_vh.voter_identification_number " +
         "where v.county_name = $1"
         ;
-    pool.query(queryStr, [county_name], (error, result) => {
-        if(error) {
-            console.log(error.stack);
-            next("ERROR");
-            throw error;
-        } else {
-            const jsonData = JSON.parse(JSON.stringify(result.rows));
-            fastcsv.write(jsonData, {headers: true})
+        pool.query(queryStr, [county_name], (error, result) => {
+            if(error) {
+                console.log(error.stack);
+                next("ERROR");
+                throw error;
+            } else {
+                const jsonData = JSON.parse(JSON.stringify(result.rows));
+                fastcsv.write(jsonData, {headers: true})
                     .on("finish", function() {
                         console.log("file written: " + filePath);
                     })
                     .pipe(ws);
-            next("DOWNLOAD");
-        }        
-    });
+                next("DOWNLOAD");
+            }
+        });
+    }
 }
 
 const generateJurisdictionQVFWithHistory = (request_id, qvf, county_name, jurisdiction_name, next) => {

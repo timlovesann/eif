@@ -157,7 +157,6 @@ export const DownloadsPage: React.FC = () => {
       setRedirect("/login"); 
     } 
     setCurrentUser(currentUser);
-    console.log(currentUser.roles);
     if(currentUser.roles.includes('ROLE_COUNTY-LEAD')) {
       setJurisdictionOptional(true);
     }
@@ -239,7 +238,6 @@ export const DownloadsPage: React.FC = () => {
         saveAs(blob, data.request_id + "_" + data.qvf + "_" + cn + "_" + jn + ".csv");
       })
       .catch(error => {
-        console.log(error);
         if(error.response.status === 403 || error.response.status === 401) {        
           setRedirect("/login");
         }
@@ -311,11 +309,9 @@ export const DownloadsPage: React.FC = () => {
                         onChange={(e) => validateCountySelection(e.currentTarget.value)}>
                           <option value=""> --- Select County --- </option>
                           {
-                            counties.map((county) => (
-                              <option key={county.county_name} value={county.county_name}>
-                                {county.county_name}
-                              </option>
-                            ))
+                            counties.map((county) => 
+                              <option key={county.county_name} value={county.county_name}>{county.county_name}</option>
+                            )
                           }
                       </select>
                       </label>
