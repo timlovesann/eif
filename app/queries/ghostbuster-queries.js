@@ -188,6 +188,7 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "   nullif(qvf.first_name, '') " +
                 " ) as full_name, " +
                 "qvf.voter_identification_number, " +
+                "qvf.voter_status_type_code," +
                 "qvf.year_of_birth, " +
                 "qvf.jurisdiction_name, " +
                 "qvf.precinct, " +
@@ -205,12 +206,12 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "qvf.mailing_address_line_three, " +  
                 "qvf.first_name, " +
                 "qvf.middle_name, " +
-                "qvf.last_name, " +
+                "qvf.last_name, " +                
                 "qvf.location_hash, " +
-                "date(qvfh_nov2020.election_date), " +
+                "date(qvfh_nov2020.election_date) as nov_2020_election_date, " +
                 "CASE qvfh_nov2020.election_date WHEN '11/03/2020' THEN 'Voted' ELSE 'Did not Vote' END as voted_nov_2020, " +
                 "CASE qvfh_nov2020.is_absentee_voter WHEN 'N' THEN 'In Person' ELSE (CASE qvfh_nov2020.is_absentee_voter WHEN 'Y' THEN 'Absentee' ELSE '' END) END as absentee_or_in_person_nov_2020, " +
-                "date(qvfh_aug2022.election_date), " +
+                "date(qvfh_aug2022.election_date) as aug_2022_election_date, " +
                 "CASE qvfh_aug2022.election_date WHEN '08/02/2022' THEN 'Voted' ELSE 'Did not Vote' END as voted_aug_2022, " +
                 "CASE qvfh_aug2022.is_absentee_voter WHEN 'N' THEN 'In Person' ELSE (CASE  qvfh_aug2022.is_absentee_voter WHEN 'Y' THEN 'Absentee' ELSE '' END) END as absentee_or_in_person_aug_2022 " +    
                 "from qvf_20220901_v qvf " +
@@ -218,7 +219,7 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "left join history_nov_2020 qvfh_nov2020 on qvf.voter_identification_number = qvfh_nov2020.voter_identification_number " +
                 "left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number " +
                 "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and g.type != 'APT_LOT?'";
-    console.log(query);
+    //console.log(query);
     pool.query(query, [county, jurisdiction], (error, results) => {
         if (error) {
             throw error;
