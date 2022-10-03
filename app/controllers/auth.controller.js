@@ -1,4 +1,5 @@
 const db = require("../models");
+const date = require('date-and-time');
 const config = require("../config/auth.config");
 const User = db.user;
 const Role = db.role;
@@ -40,7 +41,7 @@ exports.signup = (req, res) => {
     });
 };
 
-exports.signin = (req, res) => {
+exports.signin = (req, res) => {  
   User.findOne({
     where: {
       username: req.body.username.toLowerCase()
@@ -48,9 +49,12 @@ exports.signin = (req, res) => {
   })
     .then(user => {
       if (!user) {
-        return res.status(404).send({ message: "Login failed. Please check your credentials. ¯\_(ツ)_/¯" });
+        console.log(date.format((new Date()),'YYYY/MM/DD HH:mm:ss') + " :: signin attempt by: " + req.body.username + " :: IP: " + " FAILED (User not found)");
+        //return res.status(404).send({ message: "Login failed. Please check your credentials. ¯\_(ツ)_/¯" });
+        return res.status(404).send({ message: "User not found. " });
       }
       if(!user.isActive) {
+        console.log(date.format((new Date()),'YYYY/MM/DD HH:mm:ss') + " :: signin attempt by: " + req.body.username + " :: IP: " + " FAILED (User inactive)");
         return res.status(400).send({ message: "User Not Activated. Admin has been notified to approve your access. You'll be notified via email at " + user.email + " when account has been activated." });
       }
       var passwordIsValid = bcrypt.compareSync(
@@ -59,9 +63,11 @@ exports.signin = (req, res) => {
       );
 
       if (!passwordIsValid) {
-        return res.status(401).send({
+        console.log(date.format((new Date()),'YYYY/MM/DD HH:mm:ss') + " :: signin attempt by: " + req.body.username + " :: IP: " + " FAILED (password invalid)");
+        return res.status(401).send({          
           accessToken: null,
-          message: "Login failed. Please check your credentials. ¯\_(ツ)_/¯"
+          //message: "Login failed. Please check your credentials. ¯\_(ツ)_/¯"
+          message: "Login failed. Please check your credentials. "
         });
       }
 
@@ -74,6 +80,7 @@ exports.signin = (req, res) => {
         for (let i = 0; i < roles.length; i++) {
           authorities.push("ROLE_" + roles[i].name.toUpperCase());
         }
+        console.log(date.format((new Date()),'YYYY/MM/DD HH:mm:ss') + " :: signin attempt by: " + req.body.username + " :: IP: " + " SUCCESS");
         res.status(200).send({
           id: user.id,
           username: user.username,
