@@ -1,4 +1,5 @@
 const dbConfig = require("../config/db.config.js");
+const date = require('date-and-time');
 const Pool = require('pg').Pool
 const pool = new Pool({
   user: dbConfig.USER,
@@ -87,7 +88,8 @@ const getChallengeListByPrecinct = (request, response) => {
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'CH' THEN '009_CHALLENGED' ELSE null END, ''), " +
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'V' THEN '009_VERIFY' ELSE null END, ''), " +					 
                 "   nullif(CASE qvf.uocava_status_code WHEN 'O' THEN '010_UOCAVA' ELSE null END, ''), " +
-                "   nullif(CASE WHEN (QVF.LOCATION_HASH = ZIP.LOCATION_HASH) THEN '003_USPS' ELSE NULL END, '') " +
+                "   nullif(CASE WHEN (QVF.LOCATION_HASH = ZIP.LOCATION_HASH) THEN '003_USPS' ELSE NULL END, ''), " +
+                "   nullif(CASE WHEN (NCOA.NCOA_MOVE_DATE IS NOT NULL) THEN '008_NCOA_MOVED' ELSE NULL END, '') " +
                 " ) as challenge_codes, " +
                 "concat_ws(' ', " + 
                 "   nullif(qvf.street_number_prefix, ''), " + 
@@ -105,6 +107,9 @@ const getChallengeListByPrecinct = (request, response) => {
                 "   nullif(qvf.middle_name, ''), " +
                 "   nullif(qvf.first_name, '') " +
                 " ) as full_name, " +
+                "NCOA.NCOA_MOVE_DATE, NCOA.NCOA_MOVE_TYPE, NCOA.CONDITION_1, NCOA.CONDITION_2, NCOA.CONDITION_3, NCOA.CONDITION_4, NCOA.CONDITION_5, NCOA.CONDITION_6, NCOA.CONDITION_7, " +
+                "CONCAT_WS(' ', NULLIF(NCOA.NCOA_ADDRESS, ''), NULLIF(NCOA.NCOA_CITY, ''), NULLIF(NCOA.NCOA_STATE, ''), NULLIF(NCOA.NCOA_ZIP_CODE_PLUS4, ''), NULLIF(NCOA.NCOA_COUNTY_NAME, '')) AS NCOA_MOVED_TO_ADDRESS," +
+                "NCOA.NCOA_DELIVERY_POINT, NCOA.NCOA_RETURN_CODE, NCOA.NCOA_FOOTNOTE, " +
                 "qvf.voter_identification_number, " +
                 "qvf.voter_status_type_code," +
                 "qvf.registration_date, " +
@@ -137,6 +142,7 @@ const getChallengeListByPrecinct = (request, response) => {
             "join ghostbuster g on g.location_hash = qvf.location_hash " +
             "left join history_nov_2020 qvfh_nov2020 on qvf.voter_identification_number = qvfh_nov2020.voter_identification_number " +
             "left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number " +
+            "left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER " +
             "left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH " +
             "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and qvf.precinct = $3 and g.type != 'APT_LOT?'";    
     pool.query(query, [county, jurisdiction, precinct], (error, results) => {
@@ -188,6 +194,7 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'V' THEN '009_VERIFY' ELSE null END, ''), " +					 
                 "   nullif(CASE qvf.uocava_status_code WHEN 'O' THEN '010_UOCAVA' ELSE null END, ''), " +
                 "   nullif(CASE WHEN (QVF.LOCATION_HASH = ZIP.LOCATION_HASH) THEN '003_USPS' ELSE NULL END, '') " +
+                "   nullif(CASE WHEN (NCOA.NCOA_MOVE_DATE IS NOT NULL) THEN '008_NCOA_MOVED' ELSE NULL END, '') " +                
                 " ) as challenge_codes, " +
                 "concat_ws(' ', " + 
                 "   nullif(qvf.street_number_prefix, ''), " + 
@@ -205,6 +212,9 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "   nullif(qvf.middle_name, ''), " +
                 "   nullif(qvf.first_name, '') " +
                 " ) as full_name, " +
+                "NCOA.NCOA_MOVE_DATE, NCOA.NCOA_MOVE_TYPE, NCOA.CONDITION_1, NCOA.CONDITION_2, NCOA.CONDITION_3, NCOA.CONDITION_4, NCOA.CONDITION_5, NCOA.CONDITION_6, NCOA.CONDITION_7, " +
+                "CONCAT_WS(' ', NULLIF(NCOA.NCOA_ADDRESS, ''), NULLIF(NCOA.NCOA_CITY, ''), NULLIF(NCOA.NCOA_STATE, ''), NULLIF(NCOA.NCOA_ZIP_CODE_PLUS4, ''), NULLIF(NCOA.NCOA_COUNTY_NAME, '')) AS NCOA_MOVED_TO_ADDRESS," +
+                "NCOA.NCOA_DELIVERY_POINT, NCOA.NCOA_RETURN_CODE, NCOA.NCOA_FOOTNOTE, " +                
                 "qvf.voter_identification_number, " +
                 "qvf.voter_status_type_code," +
                 "qvf.registration_date, " +
@@ -237,6 +247,7 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "join ghostbuster g on g.location_hash = qvf.location_hash " +
                 "left join history_nov_2020 qvfh_nov2020 on qvf.voter_identification_number = qvfh_nov2020.voter_identification_number " +
                 "left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number " +
+                "left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER " +
                 "left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH " +
                 "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and g.type != 'APT_LOT?'";
     pool.query(query, [county, jurisdiction], (error, results) => {
