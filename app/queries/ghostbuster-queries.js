@@ -56,13 +56,14 @@ const getChallengeListByPrecinct = (request, response) => {
     const county = request.params.county_name;
     const jurisdiction = request.params.jurisdiction_name;
     const precinct = request.params.precinct_name;
-    const query = "WITH history_nov_2020 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = \'11/03/2020\' ), " +
+    const query = "SELECT * FROM ( " + 
+                "WITH history_nov_2020 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = '11/03/2020' ), " +
                     "history_aug_2022 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = '08/02/2022' )" +
                 "select " +
                 "concat_ws('; ', " +
                 "   nullif(CASE WHEN (qvf.street_number IS null OR qvf.street_number = '') THEN '001_ADDRESS_BLANK' ELSE null END, ''), " +
-                "   nullif(CASE WHEN (qvf.street_name IS null OR qvf.street_name = '') THEN '001_ADDRESS_BLANK' ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'APARTMENT' THEN ( CASE WHEN (qvf.extension IS null OR qvf.extension = '') THEN '001_EXT_BLNK_APT' ELSE null END) ELSE null END, ''), " +
+                //"   nullif(CASE upper(g.type) WHEN 'APARTMENT' THEN ( CASE WHEN qvf.extension ~ '^[0-9\.]+$' THEN '001_EXT_NMBR_MSNG' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'SENIOR LIVING' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_SRLV' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'HOTEL' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_HOTL' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'TRAILER PARK' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_TRLR' ELSE null END) ELSE null END, ''), " +
@@ -88,8 +89,9 @@ const getChallengeListByPrecinct = (request, response) => {
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'CH' THEN '009_CHALLENGED' ELSE null END, ''), " +
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'V' THEN '009_VERIFY' ELSE null END, ''), " +					 
                 "   nullif(CASE qvf.uocava_status_code WHEN 'O' THEN '010_UOCAVA' ELSE null END, ''), " +
-                "   nullif(CASE WHEN (QVF.LOCATION_HASH = ZIP.LOCATION_HASH) THEN '003_USPS' ELSE NULL END, ''), " +
-                "   nullif(CASE WHEN (NCOA.NCOA_MOVE_DATE IS NOT NULL) THEN '008_NCOA_MOVED' ELSE NULL END, '') " +
+                "   nullif(CASE WHEN (ncoa.qvf_county_name != qvf.county_name) THEN (CASE WHEN (ncoa.ncoa_state = qvf.state) THEN '008_NCOA_DATE_CTY' ELSE null END) ELSE NULL END, ''), " +
+                "   nullif(CASE WHEN (ncoa.ncoa_state != qvf.state) THEN '008_NCOA_DATE_ST' ELSE NULL END, ''), " +
+                "   nullif(CASE WHEN (QVF.LOCATION_HASH = ZIP.LOCATION_HASH) THEN '003_USPS' ELSE NULL END, '') " +
                 " ) as challenge_codes, " +
                 "concat_ws(' ', " + 
                 "   nullif(qvf.street_number_prefix, ''), " + 
@@ -133,7 +135,7 @@ const getChallengeListByPrecinct = (request, response) => {
                 "qvf.last_name, " +
                 "qvf.location_hash, " +
                 "date(qvfh_nov2020.election_date) as nov_2020_election_date, " +
-                "CASE qvfh_nov2020.election_date WHEN '11/03/2020' THEN 'Voted' ELSE 'Did not Vote' END as voted_nov-2020, " +
+                "CASE qvfh_nov2020.election_date WHEN '11/03/2020' THEN 'Voted' ELSE 'Did not Vote' END as voted_nov_2020, " +
                 "CASE qvfh_nov2020.is_absentee_voter WHEN 'N' THEN 'In Person' ELSE (CASE  qvfh_nov2020.is_absentee_voter WHEN 'Y' THEN 'Absentee' ELSE '' END) END as absentee_or_in_person_nov_2020, " +
                 "date(qvfh_aug2022.election_date) aug_2022_election_date, " +
                 "CASE qvfh_aug2022.election_date WHEN '08/02/2022' THEN 'Voted' ELSE 'Did not Vote' END as voted_aug_2022, " + 
@@ -144,7 +146,8 @@ const getChallengeListByPrecinct = (request, response) => {
             "left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number " +
             "left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER " +
             "left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH " +
-            "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and qvf.precinct = $3 and g.type != 'APT_LOT?'";    
+            "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and qvf.precinct = $3 and g.type != 'APT_LOT?'" + 
+            ") as list where challenge_codes is not null and challenge_codes != ''";
     pool.query(query, [county, jurisdiction, precinct], (error, results) => {
         if (error) {
             console.log(" ----------------------------------------- " + date.format((new Date()),'YYYY/MM/DD HH:mm:ss') + " ----------------------------------------- ");
@@ -161,13 +164,14 @@ const getChallengeListByPrecinct = (request, response) => {
 const getChallengeListByJurisdiction = (request, response) => {
     const county = request.params.county_name;
     const jurisdiction = request.params.jurisdiction_name;
-    const query = "WITH history_nov_2020 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = \'11/03/2020\' ), " +
+    const query = "SELECT * FROM ( " + 
+                "WITH history_nov_2020 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = '11/03/2020' ), " +
                 "history_aug_2022 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = '08/02/2022' )" +
                 "select " +
                 "concat_ws('; ', " +
                 "   nullif(CASE WHEN (qvf.street_number IS null OR qvf.street_number = '') THEN '001_ADDRESS_BLANK' ELSE null END, ''), " +
-                "   nullif(CASE WHEN (qvf.street_name IS null OR qvf.street_name = '') THEN '001_ADDRESS_BLANK' ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'APARTMENT' THEN ( CASE WHEN (qvf.extension IS null OR qvf.extension = '') THEN '001_EXT_BLNK_APT' ELSE null END) ELSE null END, ''), " +
+                //"   nullif(CASE upper(g.type) WHEN 'APARTMENT' THEN ( CASE WHEN qvf.extension ~ '^[0-9\.]+$' THEN '001_EXT_NMBR_MSNG' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'SENIOR LIVING' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_SRLV' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'HOTEL' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_HOTL' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'TRAILER PARK' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_TRLR' ELSE null END) ELSE null END, ''), " +
@@ -193,8 +197,10 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'CH' THEN '009_CHALLENGED' ELSE null END, ''), " +
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'V' THEN '009_VERIFY' ELSE null END, ''), " +					 
                 "   nullif(CASE qvf.uocava_status_code WHEN 'O' THEN '010_UOCAVA' ELSE null END, ''), " +
+                "   nullif(CASE WHEN (ncoa.qvf_county_name != qvf.county_name) THEN (CASE WHEN (ncoa.ncoa_state = qvf.state) THEN '008_NCOA_DATE_CTY' ELSE null END) ELSE NULL END, ''), " +
+                "   nullif(CASE WHEN (ncoa.ncoa_state != qvf.state) THEN '008_NCOA_DATE_ST' ELSE NULL END, ''), " +                
                 "   nullif(CASE WHEN (QVF.LOCATION_HASH = ZIP.LOCATION_HASH) THEN '003_USPS' ELSE NULL END, '') " +
-                "   nullif(CASE WHEN (NCOA.NCOA_MOVE_DATE IS NOT NULL) THEN '008_NCOA_MOVED' ELSE NULL END, '') " +                
+                //"   nullif(CASE WHEN (NCOA.NCOA_MOVE_DATE IS NOT NULL) THEN '008_NCOA_MOVED' ELSE NULL END, '') "
                 " ) as challenge_codes, " +
                 "concat_ws(' ', " + 
                 "   nullif(qvf.street_number_prefix, ''), " + 
@@ -214,7 +220,7 @@ const getChallengeListByJurisdiction = (request, response) => {
                 " ) as full_name, " +
                 "NCOA.NCOA_MOVE_DATE, NCOA.NCOA_MOVE_TYPE, NCOA.CONDITION_1, NCOA.CONDITION_2, NCOA.CONDITION_3, NCOA.CONDITION_4, NCOA.CONDITION_5, NCOA.CONDITION_6, NCOA.CONDITION_7, " +
                 "CONCAT_WS(' ', NULLIF(NCOA.NCOA_ADDRESS, ''), NULLIF(NCOA.NCOA_CITY, ''), NULLIF(NCOA.NCOA_STATE, ''), NULLIF(NCOA.NCOA_ZIP_CODE_PLUS4, ''), NULLIF(NCOA.NCOA_COUNTY_NAME, '')) AS NCOA_MOVED_TO_ADDRESS," +
-                "NCOA.NCOA_DELIVERY_POINT, NCOA.NCOA_RETURN_CODE, NCOA.NCOA_FOOTNOTE, " +                
+                "NCOA.NCOA_DELIVERY_POINT, NCOA.NCOA_RETURN_CODE, NCOA.NCOA_FOOTNOTE, " + 
                 "qvf.voter_identification_number, " +
                 "qvf.voter_status_type_code," +
                 "qvf.registration_date, " +
@@ -249,7 +255,9 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number " +
                 "left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER " +
                 "left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH " +
-                "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and g.type != 'APT_LOT?'";
+                "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and g.type != 'APT_LOT?'" + 
+                ") as list where challenge_codes is not null and challenge_codes != ''";
+                //remove empty challenge codess from result
     pool.query(query, [county, jurisdiction], (error, results) => {
         if (error) {
             console.log(" ----------------------------------------- " + date.format((new Date()),'YYYY/MM/DD HH:mm:ss') + " ----------------------------------------- ");
