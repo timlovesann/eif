@@ -387,7 +387,7 @@ export const ChallengeList: React.FC = () => {
             </Row>
             <Row><Col>&nbsp;</Col></Row>
             <Row>
-                <Button size='lg' type="submit" className="btn" disabled={!readyforSearch}>Get Precinct Challenge List</Button>
+                <Button size='lg' type="submit" className="btn" disabled={!readyforSearch}>Get Challenge List</Button>
             </Row>
           </FormGroup>
         </Form>
