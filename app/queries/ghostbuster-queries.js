@@ -9,6 +9,50 @@ const pool = new Pool({
   port: dbConfig.PORT,
 });
 
+const e = require("cors");
+
+const getGhostbusterCountySummary = (request, response) => {
+    const county = request.params.county_name;    
+    const query = "select \
+            sum(CASE upper(g.type) WHEN 'APARTMENT' THEN ( CASE WHEN (qvf.extension IS null OR qvf.extension = '') THEN 1 ELSE 0 END) ELSE 0 END) as EXT_BLNK_APT_COUNT, \
+            sum(CASE upper(g.type) WHEN 'SENIOR LIVING' THEN ( CASE WHEN (qvf.extension IS null OR qvf.extension = '') THEN 1 ELSE 0 END) ELSE 0 END) as EXT_BLNK_SRLV_COUNT, \
+            sum(CASE upper(g.type) WHEN 'HOTEL' THEN ( CASE WHEN (qvf.extension IS null OR qvf.extension = '') THEN 1 ELSE 0 END) ELSE 0 END) as EXT_BLNK_HOTL_COUNT, \
+            sum(CASE upper(g.type) WHEN 'TRAILER PARK' THEN ( CASE WHEN (qvf.extension IS null OR qvf.extension = '') THEN 1 ELSE 0 END) ELSE 0 END) as EXT_BLNK_TRLR_COUNT, \
+            sum(CASE upper(g.type) WHEN 'EMPTY LOT' THEN 1 ELSE 0 END) as EMPTY_LOT_COUNT, \
+            sum(CASE upper(g.type) WHEN 'BUSINESS' THEN 1 ELSE 0 END) as BSN_COUNT, \
+            sum(CASE upper(g.type) WHEN 'UPS' THEN 1 ELSE 0 END) as UPS_COUNT, \
+            sum(CASE upper(g.type) WHEN 'CHURCH' THEN (CASE WHEN g.REG_QTY_2022_09 > 5 THEN 1 ELSE 0 end) ELSE 0 END) as CRC_HIGH_REG_COUNT, \
+            sum(CASE upper(g.type) WHEN 'RESIDENTIAL' THEN (CASE WHEN g.REG_QTY_2022_09 > 9 THEN 1 ELSE 0 end) ELSE 0 END) as RES_HIGH_REG_COUNT, \
+            sum(CASE when upper(g.type) IN ('MEMORY/DEMENTIA CARE', 'OTHER', 'HOTEL', 'NURSING/GROUP HOME') THEN 1 ELSE 0 END) as MISC_INV_COUNT, \
+            sum(CASE when upper(g.type) IN ('PRISON', 'RV PARK-SEASONAL', 'VIRTUALMAILBOX', 'CAMPS-SEASONAL', 'RV PARK-SEASONAL') THEN 1 ELSE 0 END) as MISC_LAW_COUNT, \
+            sum(CASE WHEN ((date_part('year', now()) - qvf.year_of_birth) > 110) THEN 1 ELSE 0 END) as AGE_OVER_COUNT, \
+            sum(CASE WHEN ((date_part('year', now()) - qvf.year_of_birth) < 18) THEN 1 ELSE 0 END) as AGE_UNDER_COUNT, \
+            sum(CASE WHEN (qvf.registration_date < '1920-01-01') THEN 1 ELSE 0 END) as REG_DATE_OLD_COUNT, \
+            sum(CASE WHEN (qvf.first_name = qvf.last_name) THEN 1 ELSE 0 END) as REG_FNLN_DUP_COUNT, \
+            sum(CASE WHEN (qvf.middle_name = qvf.last_name) THEN 1 ELSE 0 END) as REG_MNLN_DUP_COUNT, \
+            sum(CASE qvf.voter_status_type_code WHEN 'C' THEN 1 ELSE 0 END) as CANCELLED_COUNT, \
+            sum(CASE qvf.voter_status_type_code WHEN 'CH' THEN 1 ELSE 0 END) as CHALLENGED_COUNT, \
+            sum(CASE qvf.voter_status_type_code WHEN 'V' THEN 1 ELSE 0 END) as VERIFY_COUNT, \
+            sum(CASE qvf.uocava_status_code WHEN 'O' THEN 1 ELSE 0 END) as UOCAVA_COUNT, \
+            sum(CASE WHEN (QVF.LOCATION_HASH = ZIP.LOCATION_HASH) THEN 1 ELSE 0 END) as USPS_COUNT \
+        from qvf_20220901_v qvf \
+        left join ghostbuster g on g.location_hash = qvf.location_hash \
+        left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH \
+        left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER \
+        where qvf.county_name = $1";
+    
+    pool.query(query, [county], (error, results) => {
+        if (error) {
+            console.log(" ----------------------------------------- " + date.format((new Date()),'YYYY/MM/DD HH:mm:ss') + " ----------------------------------------- ");
+            console.log(error.status + " :: " + error.message);
+            console.log(query);
+            console.log(" ---------------------------------------------------------------------------------- "); 
+            throw error;
+        }
+        response.status(200).json(results.rows);
+    });
+}
+
 const getGhostbustersByCounty = (request, response) => {
     const county = request.params.county_name;
     const reg_count_threshold = 4;
@@ -63,7 +107,6 @@ const getChallengeListByPrecinct = (request, response) => {
                 "concat_ws('; ', " +
                 "   nullif(CASE WHEN (qvf.street_number IS null OR qvf.street_number = '') THEN '001_ADDRESS_BLANK' ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'APARTMENT' THEN ( CASE WHEN (qvf.extension IS null OR qvf.extension = '') THEN '001_EXT_BLNK_APT' ELSE null END) ELSE null END, ''), " +
-                //"   nullif(CASE upper(g.type) WHEN 'APARTMENT' THEN ( CASE WHEN qvf.extension ~ '^[0-9\.]+$' THEN '001_EXT_NMBR_MSNG' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'SENIOR LIVING' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_SRLV' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'HOTEL' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_HOTL' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'TRAILER PARK' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_TRLR' ELSE null END) ELSE null END, ''), " +
@@ -86,6 +129,7 @@ const getChallengeListByPrecinct = (request, response) => {
                 "   nullif(CASE WHEN (qvf.registration_date < '1920-01-01') THEN '005_REG_DATE_OLD' ELSE null END, ''), " +
                 "   nullif(CASE WHEN (qvf.first_name = qvf.last_name) THEN '006_REG_FNLN_DUP' ELSE null END, ''), " + 
                 "   nullif(CASE WHEN (qvf.middle_name = qvf.last_name) THEN '006_REG_MNLN_DUP' ELSE null END, ''), " +
+                "   nullif(CASE qvf.voter_status_type_code WHEN 'C' THEN '009_CANCELLED' ELSE null END, ''), " +
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'CH' THEN '009_CHALLENGED' ELSE null END, ''), " +
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'V' THEN '009_VERIFY' ELSE null END, ''), " +					 
                 "   nullif(CASE qvf.uocava_status_code WHEN 'O' THEN '010_UOCAVA' ELSE null END, ''), " +
@@ -171,7 +215,6 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "concat_ws('; ', " +
                 "   nullif(CASE WHEN (qvf.street_number IS null OR qvf.street_number = '') THEN '001_ADDRESS_BLANK' ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'APARTMENT' THEN ( CASE WHEN (qvf.extension IS null OR qvf.extension = '') THEN '001_EXT_BLNK_APT' ELSE null END) ELSE null END, ''), " +
-                //"   nullif(CASE upper(g.type) WHEN 'APARTMENT' THEN ( CASE WHEN qvf.extension ~ '^[0-9\.]+$' THEN '001_EXT_NMBR_MSNG' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'SENIOR LIVING' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_SRLV' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'HOTEL' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_HOTL' ELSE null END) ELSE null END, ''), " +
                 "   nullif(CASE upper(g.type) WHEN 'TRAILER PARK' THEN (CASE WHEN (qvf.extension IS null or qvf.extension = '') THEN '001_EXT_BLNK_TRLR' ELSE null END) ELSE null END, ''), " +
@@ -194,13 +237,13 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "   nullif(CASE WHEN (qvf.registration_date < '1920-01-01') THEN '005_REG_DATE_OLD' ELSE null END, ''), " +
                 "   nullif(CASE WHEN (qvf.first_name = qvf.last_name) THEN '006_REG_FNLN_DUP' ELSE null END, ''), " + 
                 "   nullif(CASE WHEN (qvf.middle_name = qvf.last_name) THEN '006_REG_MNLN_DUP' ELSE null END, ''), " +
+                "   nullif(CASE qvf.voter_status_type_code WHEN 'C' THEN '009_CANCELLED' ELSE null END, ''), " +
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'CH' THEN '009_CHALLENGED' ELSE null END, ''), " +
                 "   nullif(CASE qvf.voter_status_type_code WHEN 'V' THEN '009_VERIFY' ELSE null END, ''), " +					 
                 "   nullif(CASE qvf.uocava_status_code WHEN 'O' THEN '010_UOCAVA' ELSE null END, ''), " +
                 "   nullif(CASE WHEN (ncoa.qvf_county_name != qvf.county_name) THEN (CASE WHEN (ncoa.ncoa_state = qvf.state) THEN '008_NCOA_DATE_CTY' ELSE null END) ELSE NULL END, ''), " +
                 "   nullif(CASE WHEN (ncoa.ncoa_state != qvf.state) THEN '008_NCOA_DATE_ST' ELSE NULL END, ''), " +                
                 "   nullif(CASE WHEN (QVF.LOCATION_HASH = ZIP.LOCATION_HASH) THEN '003_USPS' ELSE NULL END, '') " +
-                //"   nullif(CASE WHEN (NCOA.NCOA_MOVE_DATE IS NOT NULL) THEN '008_NCOA_MOVED' ELSE NULL END, '') "
                 " ) as challenge_codes, " +
                 "concat_ws(' ', " + 
                 "   nullif(qvf.street_number_prefix, ''), " + 
@@ -257,7 +300,6 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH " +
                 "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and g.type != 'APT_LOT?'" + 
                 ") as list where challenge_codes is not null and challenge_codes != ''";
-                //remove empty challenge codess from result
     pool.query(query, [county, jurisdiction], (error, results) => {
         if (error) {
             console.log(" ----------------------------------------- " + date.format((new Date()),'YYYY/MM/DD HH:mm:ss') + " ----------------------------------------- ");
@@ -272,6 +314,7 @@ const getChallengeListByJurisdiction = (request, response) => {
 }
   
 module.exports = {
+    getGhostbusterCountySummary,
     getGhostbustersByCounty,
     getChallengeListByPrecinct,
     getChallengeListByJurisdiction,

@@ -85,31 +85,41 @@ export const Ghostbusters: React.FC = () => {
     ], []
   );  
   
-  useEffect(() => {
+  const checkAuthZ = (next) => {
     const currentUser = AuthService.getCurrentUser();
-    if (!currentUser) {
-      setRedirect("/login"); 
-    } 
     setCurrentUser(currentUser);
     setUserReady(true);
-
-    const abortController = new AbortController();
-    setIsCountyDropdownLoading(true);    
-    void async function fetchCounties() {
-      try {
-        const url = process.env.REACT_API_BASE_URL + '/api/counties';
-        const response = await fetch(url, { signal: abortController.signal });
-        setCounties(await response.json());
-        setIsCountyDropdownLoading(false);
-        setIsLoading(false);
-      } catch (error) {
-          console.log('error', error);
+    if (!currentUser || currentUser === null) {
+      setRedirect("/login"); 
+    } else {
+      if(currentUser.roles.includes("ROLE_COUNTY-LEAD")) {
+        next();
+      } else {
+        setRedirect("/donate"); 
       }
-    }();
+    }    
+  }
 
-    return () => {
-      abortController.abort();
-    }
+  useEffect(() => {
+    checkAuthZ(function() {
+      const abortController = new AbortController();
+      setIsCountyDropdownLoading(true);    
+      void async function fetchCounties() {
+        try {
+          const url = process.env.REACT_API_BASE_URL + '/api/counties';
+          const response = await fetch(url, { signal: abortController.signal });
+          setCounties(await response.json());
+          setIsCountyDropdownLoading(false);
+          setIsLoading(false);
+        } catch (error) {
+            console.log('error', error);
+        }
+      }();
+
+      return () => {
+        abortController.abort();
+      }
+    });
   }, []);  
 
   function validateCountySelection(countySelected): void {

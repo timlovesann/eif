@@ -1,5 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
+web/dist/*.js
+web/dist/*.txt
 app/config/db.config.js
 app/config/auth.config.js
 # dependencies

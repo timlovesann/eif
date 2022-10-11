@@ -30,7 +30,6 @@ export const DownloadsPage: React.FC = () => {
   const [redirect, setRedirect] = useState(null);
   const [userReady, setUserReady] = useState(false);
   const [currentUser, setCurrentUser] = useState();
-  //const [currentUser, setCurrentUser] = useState({ username: "" });
   const [isQvfDateLoading, setIsQvfDateLoading] = useState(false);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
 
@@ -95,7 +94,6 @@ export const DownloadsPage: React.FC = () => {
     } else {
       setQvfDate(qvfSelected);
       setDownloadRequest( {...downloadRequest, "qvf": qvfSelected });
-      //fetchCounties(qvfSelected);
     }
   }  
   function validateCountySelection(countySelected): void {
@@ -151,17 +149,22 @@ export const DownloadsPage: React.FC = () => {
         console.log(e);
       });
   };
-  useEffect(() => {
+  const checkAuthZ = (next) => {
     const currentUser = AuthService.getCurrentUser();
-    if (!currentUser) {
+    if (!currentUser || currentUser === null) {
       setRedirect("/login"); 
-    } 
-    setCurrentUser(currentUser);
-    if(currentUser.roles.includes('ROLE_COUNTY-LEAD')) {
-      setJurisdictionOptional(true);
+    } else {
+      if(currentUser.roles.includes("ROLE_COUNTY-LEAD")) {
+        next();
+      } else {
+        setRedirect("/donate"); 
+      }
     }
-    setUserReady(true);    
-    fetch(process.env.REACT_API_BASE_URL + '/api/qvfdates')
+  };
+
+  useEffect(() => {
+    checkAuthZ(function() {
+      fetch(process.env.REACT_API_BASE_URL + '/api/qvfdates')
       .then((res) => res.json())
       .then((qvfDates) => {
         setQvfDates(qvfDates);
@@ -192,7 +195,8 @@ export const DownloadsPage: React.FC = () => {
       }();
       return () => {
         abortController.abort();
-      }    
+      } 
+    });
   }, []);
 
   const saveDownloadRequest = async (event: React.FormEvent<HTMLFormElement>) => {

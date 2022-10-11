@@ -6,7 +6,7 @@ import AuthService from "../services/auth.service";
 import { CountySummary } from "../types/county.type";
 import Card from "react-bootstrap/Card";
 import "./card.css";
-import { Col, ListGroup, Row, Table } from 'react-bootstrap';
+import { Button, Col, ListGroup, Offcanvas, Row, Table } from 'react-bootstrap';
 import { CountyMetadata } from '../types/countymetadata.type';
 
 interface ICountyHeaderProps {
@@ -19,7 +19,10 @@ const CountyInformation: React.FC<ICountyHeaderProps> = ({countySummary, countyM
     const [isLoading, setIsLoading] = useState(false);
     const [userReady, setUserReady] = useState(false);
     const [currentUser, setCurrentUser] = useState({username: ""});   
+    const [show, setShow] = useState(false);
 
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
     useEffect(() => {
         const currentUser = AuthService.getCurrentUser();
         if (!currentUser) {
@@ -31,46 +34,56 @@ const CountyInformation: React.FC<ICountyHeaderProps> = ({countySummary, countyM
 
     return (
         <>
-            <Card bg="light-blue">
-                <Card.Body style={{ color: "black" }}>
-                    <Card.Title>{countySummary.county_name} County Summary per September 2022 QVF</Card.Title>
-                    <Card.Text style={{ color: "black" }}>
-                        <Table striped bordered hover> 
-                            <tbody>
-                                <td>
-                                    <tr>
-                                        <td>Total Registered Voter Count</td>
-                                        <td>{countySummary.total_registered_voter_count}</td>
-                                        <td>Active Registered Voter Count (A)</td>
-                                        <td>{countySummary.active_registered_voter_count}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Challenged Voter Count (CH)</td>
-                                        <td>{countySummary.challenged_voter_count}</td>
-                                        <td>Verify Voter Count (V)</td>
-                                        <td>{countySummary.verify_voter_count}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Canceled Voter Count (C)</td>
-                                        <td>{countySummary.canceled_voter_count}</td>
-                                        <td>Rejected Voter Count (R)</td>
-                                        <td>{countySummary.rejected_voter_count}</td>
-                                    </tr>
-                                    <tr>
-                                        <td colSpan={2}>Voting System</td>
-                                        <td colSpan={2}>{countyMetadata.voting_system}</td>
-                                    </tr> 
-                                    <tr>
-                                        <td colSpan={2}>Keshel Heat Map Color</td>
-                                        <td colSpan={2} color={countyMetadata.keshel_heatmap_color}>{countyMetadata.keshel_heatmap_color}</td>
-                                    </tr>
-                                </td>                                                                                                
-                            </tbody>
-                        </Table>
-                    </Card.Text>
-                    <Card.Link color='blue' href={countyMetadata.census_url} target="_blank">Census Source: {countyMetadata.census_url}</Card.Link>
-                </Card.Body>
-            </Card>        
+            <Button variant="primary" onClick={handleShow} className="me-2">
+                Show County Summary
+            </Button>
+            <Offcanvas show={show} onHide={handleClose} placement="end">
+                <Offcanvas.Header closeButton>
+                    <Offcanvas.Title>{countySummary.county_name}</Offcanvas.Title>
+                </Offcanvas.Header>
+                <Offcanvas.Body>
+                <div className='p-2'>  
+                <Table striped bordered hover>  
+                <thead>  
+                    <tr>  
+                        <th></th>  
+                        <th></th>  
+                        <th></th>  
+                        <th></th>  
+                    </tr>  
+                </thead>  
+                <tbody>  
+                    <tr>  
+                        <td>Total registered voter count</td>  
+                        <td>{countySummary.total_registered_voter_count}</td>  
+                        <td>Active status voter registrations</td>  
+                        <td>{countySummary.active_registered_voter_count}</td>  
+                    </tr>  
+                    <tr>  
+                        <td>Registrations from Apartments with blank extension</td>  
+                        <td>{countySummary.challenged_voter_count}</td>  
+                        <td>Registrations from Trailer Parks with blank extension</td>  
+                        <td>{countySummary.verify_voter_count}</td>  
+                    </tr>  
+                    <tr>  
+                        <td>Voter registrations with canceled status</td>  
+                        <td>{countySummary.canceled_voter_count}</td>  
+                        <td>Rejected voter status count</td>  
+                        <td>{countySummary.rejected_voter_count}</td>   
+                    </tr>
+                    <tr>  
+                        <td colSpan={2}>Voting system</td>  
+                        <td colSpan={2}>{countyMetadata.voting_system}</td>  
+                    </tr>
+                    <tr>  
+                        <td colSpan={2}>Census URL</td>  
+                        <td colSpan={2}>{countyMetadata.census_url}</td>   
+                    </tr>
+                </tbody>  
+                </Table>  
+                </div>  
+                </Offcanvas.Body>
+            </Offcanvas>               
         </>
     )
 }

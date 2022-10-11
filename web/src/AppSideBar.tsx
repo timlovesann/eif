@@ -17,16 +17,22 @@ import AuthService from "./services/auth.service";
 import News from './components/News';
 import Contact from './components/Contact';
 import ChallengeList from './components/ChallengeList';
-//import VoterData from './components/VoterData';
 import DownloadsPage from './components/DownloadsPage';
 import CountdownTimer from './components/CountdownTimer';
+import { faUniregistry } from '@fortawesome/free-brands-svg-icons';
+import Donate from './components/Donate';
+import UserAdminPage from './components/UserAdminPage';
 
 
 type User = {
-  username: string
+  username: string,
+  roles: string[],
 }
 type MyProps = {};
-type MyState = {      
+type MyState = {    
+  showDownloadsCategory: false,
+  showReportsCategory: false,
+  showAdminCategory: false,
   showModeratorBoard: false,
   showAdminBoard: false,
   currentUser: User
@@ -38,6 +44,9 @@ class AppSideBar extends Component<MyProps, MyState> {
     this.logOut = this.logOut.bind(this);
 
     this.state = {
+      showDownloadsCategory: false,
+      showReportsCategory: false,
+      showAdminCategory: false,
       showModeratorBoard: false,
       showAdminBoard: false,
       currentUser: null,
@@ -49,6 +58,9 @@ class AppSideBar extends Component<MyProps, MyState> {
     if (user) {
       this.setState({
         currentUser: user,
+        showDownloadsCategory: user.roles.includes("ROLE_COUNTY-LEAD"),
+        showReportsCategory: user.roles.includes("ROLE_COUNTY-LEAD"),
+        showAdminCategory: user.roles.includes("ROLE_ADMIN"),
         showModeratorBoard: user.roles.includes("ROLE_DATA_CURATOR"),
         showAdminBoard: user.roles.includes("ROLE_ADMIN"),
       });
@@ -66,13 +78,16 @@ class AppSideBar extends Component<MyProps, MyState> {
   logOut() {
     AuthService.logout();
     this.setState({
+      showDownloadsCategory: false,
+      showReportsCategory: false,
+      showAdminCategory: false,
       showModeratorBoard: false,
       showAdminBoard: false,
       currentUser: undefined,
     });
   }  
   render() {
-    const { currentUser, showModeratorBoard, showAdminBoard } = this.state;
+    const { currentUser, showDownloadsCategory, showReportsCategory, showAdminCategory, showModeratorBoard, showAdminBoard } = this.state;
     const michiganMidtermElectionDate = new Date('2022-11-08T07:00:00-04:00').getTime();      
     return (
       <div className="wrapper">
@@ -84,11 +99,11 @@ class AppSideBar extends Component<MyProps, MyState> {
           <ul className="list-unstyled components">
             <li>
                 <a href="#homeSubmenu" data-toggle="collapse" aria-expanded="false" className="dropdown-toggle">
-                  <i className="fas fa-user-secret"></i>&nbsp;
+                  <i className="fas fa-user-clock"></i>&nbsp;
                   Audit
                 </a>
                 <ul className="collapse list-unstyled" id="homeSubmenu">
-                  <li className="nav-item">
+                  <li className="nav-item">                    
                     <Link to={"/my-voting-history"} className="nav-link">
                       Voting History
                     </Link>
@@ -101,19 +116,19 @@ class AppSideBar extends Component<MyProps, MyState> {
                   Downloads
                 </a>
                 <ul className="collapse list-unstyled" id="downloadPageSubmenu">                
-                  <li className="nav-item">
+                  <li className="nav-item">                    
                     <Link to={"/voter-data"} className="nav-link">
                       Voter Data
                     </Link>
                   </li>                                                                                     
                 </ul>
-            </li>                    
+            </li>
             <li>
-                <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false" className="dropdown-toggle">
+                <a href="#reportsPageSubmenu" data-toggle="collapse" aria-expanded="false" className="dropdown-toggle">
                   <i className="fas fa-glasses"></i>&nbsp;
                   Reports
                 </a>
-                <ul className="collapse list-unstyled" id="pageSubmenu">                
+                <ul className="collapse list-unstyled" id="reportsPageSubmenu">                
                   <li className="nav-item">
                     <Link to={"/ghostbusters-by-county"} className="nav-link">
                       Ghostbusting Locations
@@ -126,12 +141,27 @@ class AppSideBar extends Component<MyProps, MyState> {
                   </li>                                                                                    
                 </ul>
             </li>
+            { showAdminCategory ? 
+            <li>
+                <a href="#adminPageSubmenu" data-toggle="collapse" aria-expanded="false" className="dropdown-toggle">
+                  <i className="fas fa-user-secret"></i>&nbsp;
+                  Admin
+                </a>
+                <ul className="collapse list-unstyled" id="adminPageSubmenu">                
+                  <li className="nav-item">
+                    <Link to={"/administer-users"} className="nav-link">
+                      Users & Roles
+                    </Link>
+                  </li>
+                </ul>
+            </li> 
+            : null }        
             <li>
               <Link to={"/contact"} className="nav-link">
-                  <i className="fas fa-address-card"></i>&nbsp;
-                  Contact
+                <i className="fas fa-address-card"></i>&nbsp;
+                Contact
               </Link>
-            </li>
+            </li>          
           </ul>
         </nav>
         <div id="content">
@@ -197,10 +227,12 @@ class AppSideBar extends Component<MyProps, MyState> {
             <Route exact path="/login" component={Login} />
             <Route exact path="/register" component={Register} />            
             <Route exact path="/profile" component={Profile} />
+            <Route exact path="/donate" component={Donate} />
             <Route path="/ghostbusters-by-county" component={Ghostbusters} />
             <Route path="/challenge-list" component={ChallengeList} />
             <Route path="/my-voting-history" component={MyVotingHistory} />
             <Route path="/voter-data" component={DownloadsPage} />
+            <Route path="/administer-users" component={UserAdminPage} />
             <Route path="/audit-my-address" component={AuditMyAddress} />
             <Route path="/about" component={About} />
             <Route path="/resources" component={Resources} />

@@ -7,10 +7,12 @@ import AuthService from "../services/auth.service";
 import { Redirect } from "react-router-dom";
 import authHeader from "../services/auth-header";
 import CountyInformation from "./CountyInformation";
+import { GhostbustingSummary } from "../types/ghostbustingsummary.type";
 import { CountySummary } from "../types/county.type";
 import { CountyMetadata } from "../types/countymetadata.type";
 import { resourceLimits } from "worker_threads";
 import e from "express";
+import GhostbustingSummaryInformation from "./GhostbustingSummaryInformation";
 
 export interface RegisteredVoter {
   challenge_codes: string;
@@ -60,6 +62,7 @@ export const ChallengeList: React.FC = () => {
   const [responseMessage, setResponseMessage] = useState("");  
   
   const [challengeableVoters, setChallengeableVoters] = useState([]);
+  const [ghostbustingSummaryInfo, setGhostbustingSummaryInfo] = useState<GhostbustingSummary>();
   const [countySummaryInfo, setCountySummaryInfo] = useState<CountySummary>();
   const [countyMetadataInfo, setCountyMetadataInfo] = useState<CountyMetadata>(); 
   const [hideDownloadButton, setHideDownloadButton] = useState(true);
@@ -96,31 +99,40 @@ export const ChallengeList: React.FC = () => {
       }                                                                                                   
     ], []
   );  
-  
-  useEffect(() => {
+  const checkAuthZ = (next) => {
     const currentUser = AuthService.getCurrentUser();
-    if (!currentUser) {
-      setRedirect("/login"); 
-    } 
     setCurrentUser(currentUser);
     setUserReady(true);
-
-    const abortController = new AbortController();
-    setIsCountyDropdownLoading(true);    
-    void async function fetchCounties() {
-      try {
-        const url = process.env.REACT_API_BASE_URL + '/api/counties';
-        const response = await fetch(url, { signal: abortController.signal });
-        setCounties(await response.json());
-        setIsCountyDropdownLoading(false);
-        setIsLoading(false);
-      } catch (error) {
-          console.log('error', error);
+    if (!currentUser || currentUser === null) {
+      setRedirect("/login"); 
+    } else {
+      if(currentUser.roles.includes("ROLE_COUNTY-LEAD")) {
+        next();
+      } else {
+        setRedirect("/donate"); 
       }
-    }();
-    return () => {
-      abortController.abort();
     }
+  };
+
+  useEffect(() => {
+    checkAuthZ(function() {
+      const abortController = new AbortController();
+      setIsCountyDropdownLoading(true);    
+      void async function fetchCounties() {
+        try {
+          const url = process.env.REACT_API_BASE_URL + '/api/counties';
+          const response = await fetch(url, { signal: abortController.signal });
+          setCounties(await response.json());
+          setIsCountyDropdownLoading(false);
+          setIsLoading(false);
+        } catch (error) {
+            console.log('error', error);
+        }
+      }();
+      return () => {
+        abortController.abort();
+      }
+    });
   }, []);  
   
   function validateCountySelection(countySelected): void {
@@ -205,13 +217,16 @@ export const ChallengeList: React.FC = () => {
     let endpoints = [
       process.env.REACT_API_BASE_URL + `/api/county-summary/${countyName}`,
       process.env.REACT_API_BASE_URL + `/api/county-metadata/${countyName}`,
-      challenge_list_url
+      challenge_list_url,
+      process.env.REACT_API_BASE_URL + `/api/ghostbuster-summary/${countyName}`
     ];
+
     const countySummaryPromise = new Promise(async (resolve, reject) => {
-      await axios.get(endpoints[0])
+      await axios.get(endpoints[0], { headers: authHeader() })
       .then(resp => {
         if(resp.status === 200) {        
           setCountySummaryInfo(resp.data);
+          //setCountySummaryInfo({...countySummaryInfo, county_name: countyName});
           resolve(resp);
         } else {
           reject(resp.status);
@@ -225,7 +240,7 @@ export const ChallengeList: React.FC = () => {
       });
     });
     const countyMetadataPromise = new Promise(async (resolve, reject) => {
-      await axios.get(endpoints[1])
+      await axios.get(endpoints[1], { headers: authHeader() })
       .then(resp => {
         if(resp.status === 200) {
           setCountyMetadataInfo(resp.data[0]);
@@ -245,8 +260,7 @@ export const ChallengeList: React.FC = () => {
       axios.get(endpoints[2], { headers: authHeader() })
       .then(resp => {
         if(resp.status === 200) {
-          setChallengeableVoters(resp.data);                  
-          console.log(resp.data.length);
+          setChallengeableVoters(resp.data);
           if(resp.data.length > 0) {
             setHideDownloadButton(false);
           }
@@ -262,7 +276,29 @@ export const ChallengeList: React.FC = () => {
         reject(error.response.responseMessage);
       });  
     });
-    const allPromises = Promise.allSettled( [countySummaryPromise, countyMetadataPromise, challengeListPromise] );
+
+    const ghostbustingStatsPromise = new Promise(async (resolve, reject) => {
+      await axios.get(endpoints[3], { headers: authHeader() })
+      .then(resp => {
+        if(resp.status === 200) {       
+          console.log(resp.data[0]); 
+          //setGhostbustingSummaryInfo({...ghostbustingSummaryInfo, county_name: countyName});
+          setGhostbustingSummaryInfo(resp.data[0]);
+          
+          resolve(resp);
+        } else {
+          reject(resp.status);
+        }
+      })
+      .catch(error => {
+        console.log(error);
+        if(error.response.status === 403 || error.response.status === 401) {        
+          setRedirect("/login");
+        }
+        reject(error.response.responseMessage);
+      });
+    });   
+    const allPromises = Promise.allSettled( [countySummaryPromise, countyMetadataPromise, challengeListPromise, ghostbustingStatsPromise] );
     allPromises.then((allResults) => allResults.forEach((result) => {
       if(result.status === 'fulfilled') {
         setResponseMessage("Success");                
@@ -369,8 +405,9 @@ export const ChallengeList: React.FC = () => {
                   <>
                     <div>
                       <CountyInformation countySummary={countySummaryInfo} countyMetadata={countyMetadataInfo}/>
-                    </div>
-                    <p>Ghostbusting data updated as of 2022-09-26.</p>
+                      <GhostbustingSummaryInformation ghostbustingSummary={ghostbustingSummaryInfo}/>
+                    </div>                   
+                    <p>Ghostbusting data updated as of 2022-10-06.</p>
                     <p>
                       <CSVLink hidden={hideDownloadButton} data={challengeableVoters} filename={countyName + '-' + jurisdictionName + '-' + precinctName + '-challenge-list.csv'}>
                         <Button className="button" color="red" size={'lg'}>Download results</Button>
