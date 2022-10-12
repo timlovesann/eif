@@ -10,6 +10,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { Redirect } from 'react-router-dom';
 import AuthService from "../services/auth.service";
 import authHeader from '../services/auth-header';
+import { CSVLink } from 'react-csv';
 
 export interface Voter {
   voter_identification_number: string;
@@ -47,6 +48,7 @@ const MyVotingHistory: React.FC = () => {
   const [voterSummary, setVoterSummary] = useState<Voter>();
   const [voterHistory, setVoterHistory] = useState([]);
   const [responseMessage, setResponseMessage] = useState("");  
+  const [hideDownloadButton, setHideDownloadButton] = useState(true);
   const columns: TableColumn<VoterHistory>[] = useMemo(
     () => [
       {
@@ -110,6 +112,7 @@ const MyVotingHistory: React.FC = () => {
     setResponseMessage('');
     if(countySelected === ""){
       setReadyForSearch(false);
+      setHideDownloadButton(true);
     } else {
       setCountyName(countySelected);
     }
@@ -118,6 +121,7 @@ const MyVotingHistory: React.FC = () => {
     // Preventing the page from reloading
     event.preventDefault();
     setIsLoading(true);
+    setHideDownloadButton(true);
     const voterSummaryPromise = new Promise(async (resolve, reject) => {
       await axios.get(process.env.REACT_API_BASE_URL + `/api/voter-summary/${countyName}/${voterZip}/${voterLastName}/${voterFirstName}/${voterYearOfBirth}`, { headers: authHeader() })
       .then(async resp => {
@@ -128,6 +132,9 @@ const MyVotingHistory: React.FC = () => {
             .then(respHistory => {
               if(respHistory.status === 200) {
                 setVoterHistory(respHistory.data);
+                if(respHistory.data.length > 0) {
+                  setHideDownloadButton(false);
+                }                
               }              
             }).catch(error => {
               console.log(error);
@@ -313,7 +320,13 @@ const MyVotingHistory: React.FC = () => {
           {
             isLoading ? 
             <Spinner animation="border" variant='danger' role="status"><span className="sr-only">Loading...</span></Spinner>
-            : voterHistory.length > 0 ? <><h4>Voting history according to QVF: 01 Sep 2022</h4><DataTable columns={columns} data={voterHistory} /></>
+            : voterHistory.length > 0 ? <><h4>Voting history according to QVF: 01 Sep 2022</h4>
+              <p>
+                <CSVLink hidden={hideDownloadButton} data={voterHistory} filename={voterSummary.voter_identification_number + '-' + voterLastName + '-voting-history.csv'}>
+                  <Button className="button" color="red" size={'lg'}>Download results</Button>
+                </CSVLink>
+              </p>
+            <DataTable columns={columns} data={voterHistory} /></>
             : <span></span>
           }    
           </>

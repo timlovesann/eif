@@ -35,7 +35,7 @@ const GhostbustingSummaryInformation: React.FC<IGhostbustingHeaderProps> = ({gho
             <Button variant="primary" onClick={handleShow} className="me-2">
                 Show Ghostbusting Summary
             </Button>
-            <Offcanvas show={show} onHide={handleClose} placement="end">
+            <Offcanvas show={show} onHide={handleClose} placement="bottom">
                 <Offcanvas.Header closeButton>
                     <Offcanvas.Title>{ghostbustingSummary.county_name}</Offcanvas.Title>
                 </Offcanvas.Header>

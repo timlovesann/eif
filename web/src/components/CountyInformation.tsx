@@ -37,7 +37,7 @@ const CountyInformation: React.FC<ICountyHeaderProps> = ({countySummary, countyM
             <Button variant="primary" onClick={handleShow} className="me-2">
                 Show County Summary
             </Button>
-            <Offcanvas show={show} onHide={handleClose} placement="end">
+            <Offcanvas show={show} onHide={handleClose} placement="bottom">
                 <Offcanvas.Header closeButton>
                     <Offcanvas.Title>{countySummary.county_name}</Offcanvas.Title>
                 </Offcanvas.Header>
