@@ -54,21 +54,21 @@ const CountyInformation: React.FC<ICountyHeaderProps> = ({countySummary, countyM
                 </thead>  
                 <tbody>  
                     <tr>  
-                        <td>Total registered voter count</td>  
+                        <td>Total Registered Voters</td>  
                         <td>{countySummary.total_registered_voter_count}</td>  
-                        <td>Active status voter registrations</td>  
+                        <td>Voters with Active Status (A)</td>  
                         <td>{countySummary.active_registered_voter_count}</td>  
                     </tr>  
                     <tr>  
-                        <td>Registrations from Apartments with blank extension</td>  
+                        <td>Voters with Challenged Status (CH)</td>  
                         <td>{countySummary.challenged_voter_count}</td>  
-                        <td>Registrations from Trailer Parks with blank extension</td>  
+                        <td>Voters with Verify Status (V)</td>  
                         <td>{countySummary.verify_voter_count}</td>  
                     </tr>  
                     <tr>  
-                        <td>Voter registrations with canceled status</td>  
+                        <td>Voters with Cancelled Status (C)</td>  
                         <td>{countySummary.canceled_voter_count}</td>  
-                        <td>Rejected voter status count</td>  
+                        <td>Voters with Rejected Status (R)</td>  
                         <td>{countySummary.rejected_voter_count}</td>   
                     </tr>
                     <tr>  

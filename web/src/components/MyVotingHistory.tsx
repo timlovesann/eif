@@ -4,7 +4,6 @@ import Button from 'react-bootstrap/Button';
 import VoterInformation from './VoterInformation';
 import VoterSummary from './VoterSummary';
 import { VoterType } from '../types/voter.type';
-import { count } from 'console';
 import DataTable, { TableColumn } from 'react-data-table-component';
 import { Card, Col, Form, FormGroup, Row, Spinner } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -287,8 +286,13 @@ const MyVotingHistory: React.FC = () => {
                           Voter Identification Number: {voterSummary.voter_identification_number}<br />
                           Year of birth: {voterSummary.year_of_birth}<br />
                           Address: {voterSummary.full_address}<br />
-                        </Card.Text>                    
+                        </Card.Text>               
                     </Card.Body>
+                    <Card.Footer>
+                    <div className="App">
+                      <a href="files/AffidavitForm.pdf" download="AffidavitForm.pdf">Download Affidavit Pdf</a>
+                    </div>
+                    </Card.Footer>
                 </Card>
               : <span></span>
             } 
