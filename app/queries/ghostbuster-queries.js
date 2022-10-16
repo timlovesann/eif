@@ -35,7 +35,7 @@ const getGhostbusterCountySummary = (request, response) => {
             sum(CASE qvf.voter_status_type_code WHEN 'V' THEN 1 ELSE 0 END) as VERIFY_COUNT, \
             sum(CASE qvf.uocava_status_code WHEN 'O' THEN 1 ELSE 0 END) as UOCAVA_COUNT, \
             sum(CASE WHEN (QVF.LOCATION_HASH = ZIP.LOCATION_HASH) THEN 1 ELSE 0 END) as USPS_COUNT \
-        from qvf_20220901_v qvf \
+        from qvf_20221001_v qvf \
         left join ghostbuster g on g.location_hash = qvf.location_hash \
         left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH \
         left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER \
@@ -73,7 +73,7 @@ const getGhostbustersByCounty = (request, response) => {
                     "   qvf.jurisdiction_name, " +
                     "   qvf.precinct, " +
                     "   qvf.location_hash " +
-                    "from qvf_20220901_v qvf " + 
+                    "from qvf_20221001_v qvf " + 
                     "join ghostbuster g " + 
                     "   on g.location_hash = qvf.location_hash " +
                     "where " + 
@@ -101,8 +101,8 @@ const getChallengeListByPrecinct = (request, response) => {
     const jurisdiction = request.params.jurisdiction_name;
     const precinct = request.params.precinct_name;
     const query = "SELECT * FROM ( " + 
-                "WITH history_nov_2020 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = '11/03/2020' ), " +
-                    "history_aug_2022 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = '08/02/2022' )" +
+                "WITH history_nov_2020 AS ( SELECT * FROM QVF_20221001_VH WHERE ELECTION_DATE = '11/03/2020' ), " +
+                    "history_aug_2022 AS ( SELECT * FROM QVF_20221001_VH WHERE ELECTION_DATE = '08/02/2022' )" +
                 "select " +
                 "concat_ws('; ', " +
                 "   nullif(CASE WHEN (qvf.street_number IS null OR qvf.street_number = '') THEN '001_ADDRESS_BLANK' ELSE null END, ''), " +
@@ -184,7 +184,7 @@ const getChallengeListByPrecinct = (request, response) => {
                 "date(qvfh_aug2022.election_date) aug_2022_election_date, " +
                 "CASE qvfh_aug2022.election_date WHEN '08/02/2022' THEN 'Voted' ELSE 'Did not Vote' END as voted_aug_2022, " + 
                 "CASE qvfh_aug2022.is_absentee_voter WHEN 'N' THEN 'In Person' ELSE (CASE  qvfh_aug2022.is_absentee_voter WHEN 'Y' THEN 'Absentee' ELSE '' END) END as absentee_or_in_person_aug_2022 " + 
-            "from qvf_20220901_v qvf " +
+            "from qvf_20221001_v qvf " +
             "join ghostbuster g on g.location_hash = qvf.location_hash " +
             "left join history_nov_2020 qvfh_nov2020 on qvf.voter_identification_number = qvfh_nov2020.voter_identification_number " +
             "left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number " +
@@ -209,8 +209,8 @@ const getChallengeListByJurisdiction = (request, response) => {
     const county = request.params.county_name;
     const jurisdiction = request.params.jurisdiction_name;
     const query = "SELECT * FROM ( " + 
-                "WITH history_nov_2020 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = '11/03/2020' ), " +
-                "history_aug_2022 AS ( SELECT * FROM QVF_20220901_VH WHERE ELECTION_DATE = '08/02/2022' )" +
+                "WITH history_nov_2020 AS ( SELECT * FROM QVF_20221001_VH WHERE ELECTION_DATE = '11/03/2020' ), " +
+                "history_aug_2022 AS ( SELECT * FROM QVF_20221001_VH WHERE ELECTION_DATE = '08/02/2022' )" +
                 "select " +
                 "concat_ws('; ', " +
                 "   nullif(CASE WHEN (qvf.street_number IS null OR qvf.street_number = '') THEN '001_ADDRESS_BLANK' ELSE null END, ''), " +
@@ -292,7 +292,7 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "date(qvfh_aug2022.election_date) as aug_2022_election_date, " +
                 "CASE qvfh_aug2022.election_date WHEN '08/02/2022' THEN 'Voted' ELSE 'Did not Vote' END as voted_aug_2022, " +
                 "CASE qvfh_aug2022.is_absentee_voter WHEN 'N' THEN 'In Person' ELSE (CASE  qvfh_aug2022.is_absentee_voter WHEN 'Y' THEN 'Absentee' ELSE '' END) END as absentee_or_in_person_aug_2022 " +    
-                "from qvf_20220901_v qvf " +
+                "from qvf_20221001_v qvf " +
                 "join ghostbuster g on g.location_hash = qvf.location_hash " +
                 "left join history_nov_2020 qvfh_nov2020 on qvf.voter_identification_number = qvfh_nov2020.voter_identification_number " +
                 "left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number " +

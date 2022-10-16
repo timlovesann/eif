@@ -9,7 +9,7 @@ const pool = new Pool({
 });
 
 const getCounties = (request, response) => {
-  pool.query('SELECT distinct county_name FROM qvf_20220901_v order by county_name asc', (error, results) => {
+  pool.query('SELECT distinct county_name FROM qvf_20221001_v order by county_name asc', (error, results) => {
     if (error) {      
       throw error;
     }
@@ -19,7 +19,7 @@ const getCounties = (request, response) => {
 
 const getCountySummary = (request, response) => {
   const county_name = request.params.county_name;  
-  pool.query('select voter_status_type_code, count(*) as count from qvf_20220901_v where county_name = $1 group by voter_status_type_code', [county_name], (error, results) => {
+  pool.query('select voter_status_type_code, count(*) as count from qvf_20221001_v where county_name = $1 group by voter_status_type_code', [county_name], (error, results) => {
     if (error) {      
       throw error;
     }  
@@ -63,7 +63,7 @@ const getCountyMetadata = (request, response) => {
 
 const getJurisdictions = (request, response) => {
   const county_name = request.params.county_name;
-  pool.query('SELECT distinct JURISDICTION_NAME FROM qvf_20220901_v WHERE COUNTY_NAME = $1 and JURISDICTION_NAME is not null order by jurisdiction_name asc', [county_name], (error, results) => {
+  pool.query('SELECT distinct JURISDICTION_NAME FROM qvf_20221001_v WHERE COUNTY_NAME = $1 and JURISDICTION_NAME is not null order by jurisdiction_name asc', [county_name], (error, results) => {
       if (error) {
           throw error;
       }
@@ -74,7 +74,7 @@ const getJurisdictions = (request, response) => {
 const getPrecincts = (request, response) => {
   const county_name = request.params.county_name;
   const jurisdiction_name = request.params.jurisdiction_name;
-  pool.query('SELECT distinct PRECINCT FROM qvf_20220901_v WHERE COUNTY_NAME = $1 and JURISDICTION_NAME = $2 and PRECINCT is not null order by precinct asc', [county_name, jurisdiction_name], (error, results) => {
+  pool.query('SELECT distinct PRECINCT FROM qvf_20221001_v WHERE COUNTY_NAME = $1 and JURISDICTION_NAME = $2 and PRECINCT is not null order by precinct asc', [county_name, jurisdiction_name], (error, results) => {
       if (error) {
           throw error;
       }

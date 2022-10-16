@@ -9,7 +9,7 @@ const pool = new Pool({
 });
 
 const getCounties = (request, response) => {
-  pool.query('SELECT distinct county_name FROM qvf_20220901_v order by county_name asc', (error, results) => {
+  pool.query('SELECT distinct county_name FROM qvf_20221001_v order by county_name asc', (error, results) => {
     if (error) {      
       throw error;
     }
@@ -34,7 +34,7 @@ const getVoter = (request, response) => {
   const year_of_birth = parseInt(request.params.year_of_birth);
   const query = "SELECT v.voter_identification_number, concat_ws(' ', v.last_name, v.first_name, ',', v.middle_name) as voter_full_name, v.county_name, v.year_of_birth, " +
                 " to_char(v.registration_date, 'MON-DD-YYYY') as registration_date, concat_ws(' ', v.street_number, v.street_name, v.street_type, v.city, v.state, v.zip_code) as full_address " +
-                " FROM qvf_20220901_v v " + 
+                " FROM qvf_20221001_v v " + 
                 " WHERE v.county_name = $1 and v.zip_code = $2 and upper(v.last_name) = upper($3) and upper(v.first_name) = upper($4) and v.year_of_birth = $5";
   pool.query(query, [county_name, zip_code, last_name, first_name, year_of_birth], (error, results) => {
     if (error) {
@@ -46,10 +46,17 @@ const getVoter = (request, response) => {
 
 const getVoterHistory = (request, response) => {
   const id = parseInt(request.params.id);  
-  const query = "select to_char(vh.election_date, 'YYYY-MM-DD') as election_date, vh.county_name, vh.jurisdiction_name, " + 
+  /*const query = "select to_char(vh.election_date, 'YYYY-MM-DD') as election_date, vh.county_name, vh.jurisdiction_name, " + 
                 " CASE vh.is_absentee_voter WHEN 'Y' THEN 'A' ELSE (CASE vh.is_absentee_voter WHEN 'N' THEN 'I' ELSE '' END) END as voting_method " +
-                " from qvf_20220901_vh vh " + 
-                " where vh.voter_identification_number = $1";
+                " from qvf_20221001_vh vh " + 
+                " where vh.voter_identification_number = $1";*/
+  const query = " select \
+                    to_char(ed.election_date, 'YYYY-MM-DD') as election_date, vh.county_name, vh.jurisdiction_name, \
+                    case vh.is_absentee_voter when 'Y' then 'Absentee' else (case vh.is_absentee_voter when 'N' then 'In person' else 'Did Not Vote' end) end as voting_method \
+                  from election_dates ed \
+                  left outer join qvf_20221001_vh vh on vh.election_date = ed.election_date \
+                  and vh.voter_identification_number = $1 \
+                  order by ed.election_date desc";
   pool.query(query, [id], (error, results) => {
     if (error) {
       throw error;

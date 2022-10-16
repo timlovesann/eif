@@ -81,7 +81,7 @@ const MyVotingHistory: React.FC = () => {
     if (!currentUser || currentUser === null) {
       setRedirect("/login"); 
     } else {
-      if(currentUser.roles.includes("ROLE_COUNTY-LEAD")) {
+      if(currentUser.roles.includes("ROLE_USER")) {
         next();
       } else {
         setRedirect("/donate"); 
