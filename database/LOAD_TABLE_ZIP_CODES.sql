@@ -1,0 +1,1 @@
+\COPY ZIPCODES_USA FROM '/home/psypherus/ZIPCODES/ZipCodes_USA.csv' DELIMITERS ',' CSV HEADER encoding 'WIN1252';

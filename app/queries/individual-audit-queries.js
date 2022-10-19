@@ -32,7 +32,7 @@ const getVoter = (request, response) => {
   const last_name = request.params.last_name;
   const first_name = request.params.first_name;
   const year_of_birth = parseInt(request.params.year_of_birth);
-  const query = "SELECT v.voter_identification_number, concat_ws(' ', v.last_name, v.first_name, ',', v.middle_name) as voter_full_name, v.county_name, v.year_of_birth, " +
+  const query = "SELECT v.voter_identification_number, replace(concat_ws(' ', v.first_name, v.middle_name, v.last_name),'  ', ' ') as voter_full_name, v.county_name, v.year_of_birth, " +
                 " to_char(v.registration_date, 'MON-DD-YYYY') as registration_date, concat_ws(' ', v.street_number, v.street_name, v.street_type, v.city, v.state, v.zip_code) as full_address " +
                 " FROM qvf_20221001_v v " + 
                 " WHERE v.county_name = $1 and v.zip_code = $2 and upper(v.last_name) = upper($3) and upper(v.first_name) = upper($4) and v.year_of_birth = $5";

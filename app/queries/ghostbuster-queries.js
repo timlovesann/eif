@@ -38,7 +38,7 @@ const getGhostbusterCountySummary = (request, response) => {
         from qvf_20221001_v qvf \
         left join ghostbuster g on g.location_hash = qvf.location_hash \
         left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH \
-        left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER \
+        left join NCOA_COMBINED NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER \
         where qvf.county_name = $1";
     
     pool.query(query, [county], (error, results) => {
@@ -153,7 +153,7 @@ const getChallengeListByPrecinct = (request, response) => {
                 "   nullif(qvf.middle_name, ''), " +
                 "   nullif(qvf.first_name, '') " +
                 " ) as full_name, " +
-                "NCOA.NCOA_MOVE_DATE, NCOA.NCOA_MOVE_TYPE, NCOA.CONDITION_1, NCOA.CONDITION_2, NCOA.CONDITION_3, NCOA.CONDITION_4, NCOA.CONDITION_5, NCOA.CONDITION_6, NCOA.CONDITION_7, " +
+                "NCOA.NCOA_MOVE_DATE, NCOA.NCOA_MOVE_TYPE, " +
                 "CONCAT_WS(' ', NULLIF(NCOA.NCOA_ADDRESS, ''), NULLIF(NCOA.NCOA_CITY, ''), NULLIF(NCOA.NCOA_STATE, ''), NULLIF(NCOA.NCOA_ZIP_CODE_PLUS4, ''), NULLIF(NCOA.NCOA_COUNTY_NAME, '')) AS NCOA_MOVED_TO_ADDRESS," +
                 "NCOA.NCOA_DELIVERY_POINT, NCOA.NCOA_RETURN_CODE, NCOA.NCOA_FOOTNOTE, " +
                 "qvf.voter_identification_number, " +
@@ -188,7 +188,7 @@ const getChallengeListByPrecinct = (request, response) => {
             "join ghostbuster g on g.location_hash = qvf.location_hash " +
             "left join history_nov_2020 qvfh_nov2020 on qvf.voter_identification_number = qvfh_nov2020.voter_identification_number " +
             "left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number " +
-            "left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER " +
+            "left join NCOA_COMBINED NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER " + //TODO: Change to NCOA_COMBINED
             "left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH " +
             "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and qvf.precinct = $3 and g.type != 'APT_LOT?'" + 
             ") as list where challenge_codes is not null and challenge_codes != ''";
@@ -261,7 +261,7 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "   nullif(qvf.middle_name, ''), " +
                 "   nullif(qvf.first_name, '') " +
                 " ) as full_name, " +
-                "NCOA.NCOA_MOVE_DATE, NCOA.NCOA_MOVE_TYPE, NCOA.CONDITION_1, NCOA.CONDITION_2, NCOA.CONDITION_3, NCOA.CONDITION_4, NCOA.CONDITION_5, NCOA.CONDITION_6, NCOA.CONDITION_7, " +
+                "NCOA.NCOA_MOVE_DATE, NCOA.NCOA_MOVE_TYPE, " +
                 "CONCAT_WS(' ', NULLIF(NCOA.NCOA_ADDRESS, ''), NULLIF(NCOA.NCOA_CITY, ''), NULLIF(NCOA.NCOA_STATE, ''), NULLIF(NCOA.NCOA_ZIP_CODE_PLUS4, ''), NULLIF(NCOA.NCOA_COUNTY_NAME, '')) AS NCOA_MOVED_TO_ADDRESS," +
                 "NCOA.NCOA_DELIVERY_POINT, NCOA.NCOA_RETURN_CODE, NCOA.NCOA_FOOTNOTE, " + 
                 "qvf.voter_identification_number, " +
@@ -296,7 +296,7 @@ const getChallengeListByJurisdiction = (request, response) => {
                 "join ghostbuster g on g.location_hash = qvf.location_hash " +
                 "left join history_nov_2020 qvfh_nov2020 on qvf.voter_identification_number = qvfh_nov2020.voter_identification_number " +
                 "left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number " +
-                "left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER " +
+                "left join NCOA_COMBINED NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER " +
                 "left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH " +
                 "where qvf.county_name = $1 and qvf.jurisdiction_name = $2 and g.type != 'APT_LOT?'" + 
                 ") as list where challenge_codes is not null and challenge_codes != ''";

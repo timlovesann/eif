@@ -287,7 +287,6 @@ const MyVotingHistory: React.FC = () => {
                 <Card className="info-card">
                     <Card.Body style={{ color: "black" }}>
                         <Card.Title>{voterSummary.voter_full_name}</Card.Title>
-                        <Card.Subtitle>QVF 2022 Sep 01</Card.Subtitle>
                         <Card.Text style={{ color: "black" }}>
                           Registration Date: {voterSummary.registration_date}<br />
                           Voter Identification Number: {voterSummary.voter_identification_number}<br />
@@ -297,6 +296,7 @@ const MyVotingHistory: React.FC = () => {
                     </Card.Body>
                     <Card.Footer>
                     <div className="App">
+                      <p>If you see any anomalies in your voting record pertaining to the November 2020 election you may use the following form to file an affidavit.</p>
                       <a href="files/AffidavitForm.pdf" download="AffidavitForm.pdf">Download Affidavit Pdf</a>
                     </div>
                     </Card.Footer>
@@ -320,7 +320,7 @@ const MyVotingHistory: React.FC = () => {
           {
             isLoading ? 
             <Spinner animation="border" variant='danger' role="status"><span className="sr-only">Loading...</span></Spinner>
-            : voterHistory.length > 0 ? <><h4>Voting history according to QVF: 01 Sep 2022</h4>
+            : voterHistory.length > 0 ? <><h4>Voting history according to QVF: 01 Oct 2022</h4>
               <p>
                 <CSVLink hidden={hideDownloadButton} data={voterHistory} filename={voterSummary.voter_identification_number + '-' + voterLastName + '-voting-history.csv'}>
                   <Button className="button" color="red" size={'lg'}>Download results</Button>

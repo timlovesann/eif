@@ -83,7 +83,7 @@ const getPrecincts = (request, response) => {
 }
 
 const getQvfDates = (request, response) => {
-  pool.query('SELECT table_name FROM information_schema.tables WHERE table_schema = \'public\' and table_name like \'%01_v\' ORDER BY table_name', (error, results) => {
+  pool.query('SELECT table_name FROM information_schema.tables WHERE table_schema = \'public\' and table_name like \'%01_v\' ORDER BY table_name desc', (error, results) => {
       if (error) {
           throw error;
       }

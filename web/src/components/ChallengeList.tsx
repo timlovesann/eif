@@ -407,7 +407,7 @@ export const ChallengeList: React.FC = () => {
                       <CountyInformation countySummary={countySummaryInfo} countyMetadata={countyMetadataInfo}/>
                       <GhostbustingSummaryInformation ghostbustingSummary={ghostbustingSummaryInfo}/>
                     </div>                   
-                    <p>Ghostbusting data updated as of 2022-10-06.</p>
+                    <p>Ghostbusting data updated as of 2022-10-18.</p>
                     <p>
                       <CSVLink hidden={hideDownloadButton} data={challengeableVoters} filename={countyName + '-' + jurisdictionName + '-' + precinctName + '-challenge-list.csv'}>
                         <Button className="button" color="red" size={'lg'}>Download results</Button>
