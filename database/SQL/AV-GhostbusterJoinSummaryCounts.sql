@@ -10,4 +10,4 @@ select
         from AV_20221108_20221011 AV 
         left join ghostbuster g on g.location_hash = AV.location_hash
         left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = AV.LOCATION_HASH
-        left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = AV.VOTERID;
+        left join NCOA_COMBINED NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = AV.VOTERID;
