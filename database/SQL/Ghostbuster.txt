@@ -49,7 +49,7 @@ SELECT * FROM (
                    nullif(qvf.middle_name, ''), 
                    nullif(qvf.first_name, '') 
                  ) as full_name, 
-                NCOA.NCOA_MOVE_DATE, NCOA.NCOA_MOVE_TYPE, NCOA.CONDITION_1, NCOA.CONDITION_2, NCOA.CONDITION_3, NCOA.CONDITION_4, NCOA.CONDITION_5, NCOA.CONDITION_6, NCOA.CONDITION_7, 
+                NCOA.NCOA_MOVE_DATE, NCOA.NCOA_MOVE_TYPE, 
                 CONCAT_WS(' ', NULLIF(NCOA.NCOA_ADDRESS, ''), NULLIF(NCOA.NCOA_CITY, ''), NULLIF(NCOA.NCOA_STATE, ''), NULLIF(NCOA.NCOA_ZIP_CODE_PLUS4, ''), NULLIF(NCOA.NCOA_COUNTY_NAME, '')) AS NCOA_MOVED_TO_ADDRESS,
                 NCOA.NCOA_DELIVERY_POINT, NCOA.NCOA_RETURN_CODE, NCOA.NCOA_FOOTNOTE,  
                 qvf.voter_identification_number, 
