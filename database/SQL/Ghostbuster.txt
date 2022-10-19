@@ -1,4 +1,4 @@
--- Version 20221016_01
+-- Version 20221019_01
 SELECT * FROM ( 
                 WITH history_nov_2020 AS ( SELECT * FROM QVF_20221001_VH WHERE ELECTION_DATE = '11/03/2020' ), 
                 history_aug_2022 AS ( SELECT * FROM QVF_20221001_VH WHERE ELECTION_DATE = '08/02/2022' )
@@ -84,7 +84,7 @@ SELECT * FROM (
                 join ghostbuster g on g.location_hash = qvf.location_hash 
                 left join history_nov_2020 qvfh_nov2020 on qvf.voter_identification_number = qvfh_nov2020.voter_identification_number 
                 left join history_aug_2022 qvfh_aug2022 on qvf.voter_identification_number = qvfh_aug2022.voter_identification_number 
-                left join NCOA_202203 NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER 
+                left join NCOA_COMBINED NCOA ON NCOA.VOTER_IDENTIFICATION_NUMBER = QVF.VOTER_IDENTIFICATION_NUMBER 
                 left join ZIPCODES_USA ZIP on ZIP.LOCATION_HASH = QVF.LOCATION_HASH 
                 where g.type != 'APT_LOT?' 
 ) as list where challenge_codes is not null and challenge_codes != '';
