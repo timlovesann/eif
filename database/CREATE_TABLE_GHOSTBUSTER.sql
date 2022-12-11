@@ -3,6 +3,7 @@ CREATE TABLE GHOSTBUSTER (
   STREET_NUMBER_PREFIX varchar,
   STREET_NUMBER varchar,
   DIRECTION_PREFIX varchar,
+  Direction_suffix varchar,
   STREET_NAME varchar,
   STREET_TYPE varchar,
   CITY varchar,
